@@ -1,11 +1,11 @@
 'use strict';
 
 import {
-	TextDocument,
 	Diagnostic,
 	DiagnosticSeverity,
 	Range
 } from 'vscode-languageserver/node';
+import { TextDocument } from 'vscode-languageserver-textdocument';
 
 import {
 	ArrayLibConfigNode,

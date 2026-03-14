@@ -1,7 +1,8 @@
 import { ScanError } from '../dataClasses/scanError';
 import { SyntaxKind } from '../dataClasses/syntaxKind';
 import { CreateDefaultScanner } from '../scanner/impl/generateScanner';
-import { TextDocument, FoldingRangeKind, FoldingRange, Position } from 'vscode-languageserver';
+import { FoldingRangeKind, FoldingRange, Position } from 'vscode-languageserver';
+import { TextDocument } from 'vscode-languageserver-textdocument';
 import { FoldingRangesContext } from './foldingRangesContext';
 
 export function getFoldingRanges(
@@ -73,7 +74,7 @@ export function getFoldingRanges(
 			}
 
 			case SyntaxKind.LineCommentTrivia: {
-				let text = document.getText().substr(scanner.getTokenOffset(), scanner.getTokenLength());
+				let text = document.getText().slice(scanner.getTokenOffset(), scanner.getTokenOffset() + scanner.getTokenLength());
 				let m = text.match(/^\/\/\s*#(region\b)|(endregion\b)/);
 				if (m) {
 					let line = document.positionAt(scanner.getTokenOffset()).line;
