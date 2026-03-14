@@ -1,0 +1,70 @@
+name: Build Extension Package
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+    paths:
+      - README.md
+      - CHANGELOG.md
+      - package.json
+      - package-lock.json
+      - tsconfig.json
+      - tslint.json
+      - language-configuration.json
+      - .vscodeignore
+      - scripts/**
+      - syntaxes/**
+      - media/**
+      - client/package.json
+      - client/tsconfig.json
+      - client/src/**
+      - server/package.json
+      - server/tsconfig.json
+      - server/src/**
+  pull_request:
+    branches:
+      - master
+    paths:
+      - README.md
+      - CHANGELOG.md
+      - package.json
+      - package-lock.json
+      - tsconfig.json
+      - tslint.json
+      - language-configuration.json
+      - .vscodeignore
+      - scripts/**
+      - syntaxes/**
+      - media/**
+      - client/package.json
+      - client/tsconfig.json
+      - client/src/**
+      - server/package.json
+      - server/tsconfig.json
+      - server/src/**
+
+jobs:
+  build-vsix:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build extension
+        run: npm run compile && npm run bundle
+
+      - name: Package VSIX
+        run: npx @vscode/vsce package --no-yarn --out libconfig-lang.vsix
+
+      - name: Upload VSIX artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: libconfig-lang-vsix
+          path: libconfig-lang.vsix
+          if-no-files-found: error

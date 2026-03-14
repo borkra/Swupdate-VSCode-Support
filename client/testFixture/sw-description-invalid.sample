@@ -1,0 +1,11 @@
+software = {
+	update-type = true;
+	images: (
+		{
+			compressed = "brotli";
+			encrypted = 1;
+			aes-key = "0011";
+			sha256 = "abcd";
+		}
+	);
+};

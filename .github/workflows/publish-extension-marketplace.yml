@@ -1,0 +1,58 @@
+name: Publish VS Code Marketplace Extension
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing GitHub release tag to publish (for example, v1.2.3)
+        required: true
+        type: string
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  publish-marketplace:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Validate release tag exists
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release view "${{ inputs.release_tag }}" --repo "${{ github.repository }}"
+
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.ref_name }}
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build extension
+        run: npm run compile && npm run bundle
+
+      - name: Validate marketplace token
+        run: |
+          if [ -z "${{ secrets.VSCE_PAT }}" ]; then
+            echo "Missing marketplace token. Set repository secret VSCE_PAT."
+            exit 1
+          fi
+          if [ -z "${{ secrets.OVSX_PAT }}" ]; then
+            echo "Missing Open VSX token. Set repository secret OVSX_PAT."
+            exit 1
+          fi
+
+      - name: Publish to VS Code Marketplace
+        run: npx @vscode/vsce publish --no-yarn
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+
+      - name: Publish to Open VSX Registry
+        run: npx ovsx publish
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}

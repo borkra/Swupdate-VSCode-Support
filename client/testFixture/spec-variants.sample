@@ -1,0 +1,5 @@
+@include "compatibility.sample"
+
+mixedCaseTrue = TrUe;
+mixedCaseFalse = fAlSe;
+concatenated = "hello" " " "world";

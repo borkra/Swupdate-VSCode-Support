@@ -1,0 +1,336 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "LibConfig",
+	"scopeName": "source.libconfig",
+	"patterns": [
+		{
+			"include": "#declaration"
+		},
+		{
+			"include": "#comments"
+		}
+	],
+	"repository": {
+		"comments": {
+			"patterns": [
+				{
+					"begin": "/\\*\\*(?!/)",
+					"captures": {
+						"0": {
+							"name": "punctuation.definition.comment.libconfig"
+						}
+					},
+					"end": "\\*/",
+					"name": "comment.block.documentation.libconfig"
+				},
+				{
+					"begin": "/\\*",
+					"captures": {
+						"0": {
+							"name": "punctuation.definition.comment.libconfig"
+						}
+					},
+					"end": "\\*/",
+					"name": "comment.block.libconfig"
+				},
+				{
+					"captures": {
+						"1": {
+							"name": "punctuation.definition.comment.libconfig"
+						}
+					},
+					"match": "(//).*$\\n?",
+					"name": "comment.line.double-slash.libconfig"
+				},
+				{
+					"captures": {
+						"1": {
+							"name": "punctuation.definition.comment.libconfig"
+						}
+					},
+					"match": "(#).*$\\n?",
+					"name": "comment.line.double-slash.libconfig"
+				}
+			]
+		},
+		"constant": {
+			"match": "\\b(?:[Tt][Rr][Uu][Ee]|[Ff][Aa][Ll][Ss][Ee])\\b",
+			"name": "constant.language.libconfig"
+		},
+		"double": {
+			"match": "(?x)[+-]?(?:(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?|\\.\\d+(?:[eE][+-]?\\d+)?)",
+			"name": "constant.numeric.libconfig"
+		},
+		"integer": {
+			"match": "[+-]?\\d+L{1,2}",
+			"name": "constant.numeric.libconfig"
+		},
+		"hex": {
+			"match": "0[xX][0-9A-Fa-f]+L{0,2}",
+			"name": "constant.numeric.libconfig"
+		},
+		"string": {
+			"begin": "\"",
+			"beginCaptures": {
+				"0": {
+					"name": "punctuation.definition.string.begin.libconfig"
+				}
+			},
+			"end": "\"",
+			"endCaptures": {
+				"0": {
+					"name": "punctuation.definition.string.end.libconfig"
+				}
+			},
+			"name": "string.quoted.double.libconfig",
+			"patterns": [
+				{
+					"include": "#string-content"
+				}
+			]
+		},
+		"declaration": {
+			"begin": "[a-zA-Z\\*][a-zA-Z0-9_\\-\\*]*",
+			"beginCaptures": {
+				"0": {
+					"name": "support.type.property-name.libconfig"
+				}
+			},
+			"end": "[;,]|(?=[\\}\\)\\]])|$",
+			"name": "meta.declaration.libconfig",
+			"patterns": [
+				{
+					"include": "#assignment"
+				},
+				{
+					"include": "#comments"
+				},
+				{
+					"match": ".",
+					"name": "invalid.illegal.unrecognized-object-declaration.libconfig"
+				}
+			]
+		},
+		"object": {
+			"begin": "\\{",
+			"beginCaptures": {
+				"0": {
+					"name": "punctuation.definition.object.originator.libconfig"
+				}
+			},
+			"end": "\\}",
+			"endCaptures": {
+				"0": {
+					"name": "punctuation.definition.object.terminator.libconfig"
+				}
+			},
+			"name": "meta.object.libconfig",
+			"patterns": [
+				{
+					"include": "#declaration"
+				},
+				{
+					"include": "#comments"
+				},
+				{
+					"match": ".",
+					"name": "invalid.illegal.object.libconfig"
+				}
+			]
+		},
+		"array": {
+			"begin": "\\[",
+			"beginCaptures": {
+				"0": {
+					"name": "punctuation.definition.array.originator.libconfig"
+				}
+			},
+			"end": "\\]",
+			"endCaptures": {
+				"0": {
+					"name": "punctuation.definition.array.terminator.libconfig"
+				}
+			},
+			"name": "meta.object.libconfig",
+			"patterns": [
+				{
+					"include": "#scalar-value"
+				},
+				{
+					"include": "#comments"
+				},
+				{
+					"match": ",",
+					"name": "punctuation.separator.array.libconfig"
+				},
+				{
+					"match": "[^\\s\\]]",
+					"name": "invalid.illegal.expected-array-separator.libconfig"
+				}
+			]
+		},
+		"list": {
+			"begin": "\\(",
+			"beginCaptures": {
+				"0": {
+					"name": "punctuation.definition.list.originator.libconfig"
+				}
+			},
+			"end": "\\)",
+			"endCaptures": {
+				"0": {
+					"name": "punctuation.definition.list.terminator.libconfig"
+				}
+			},
+			"name": "meta.object.libconfig",
+			"patterns": [
+				{
+					"include": "#object"
+				},
+				{
+					"include": "#value"
+				},
+				{
+					"include": "#comments"
+				},
+				{
+					"match": ",",
+					"name": "punctuation.separator.list.libconfig"
+				},
+				{
+					"match": "[^\\s\\]]",
+					"name": "invalid.illegal.expected-list-separator.libconfig"
+				}
+			]
+		},
+		"assignment": {
+			"patterns": [
+				{
+					"include": "#value-assignment"
+				},
+				{
+					"include": "#comments"
+				},
+				{
+					"include": "#object-assignment"
+				}
+			]
+		},
+		"value-assignment": {
+			"begin": "=",
+			"beginCaptures": {
+				"0": {
+					"name": "keyword.operator.assignment.libconfig"
+				}
+			},
+			"end": "(?=[;,\\}\\)\\]])|$",
+			"name": "meta.assignment.libconfig",
+			"patterns": [
+				{
+					"include": "#value"
+				},
+				{
+					"include": "#comments"
+				},
+				{
+					"match": ".",
+					"name": "invalid.illegal.value-assignment.libconfig"
+				}
+			]
+		},
+		"object-assignment": {
+			"begin": ":",
+			"beginCaptures": {
+				"0": {
+					"name": "keyword.operator.assignment.libconfig"
+				}
+			},
+			"end": "(?=[;,\\}\\)\\]])|$",
+			"name": "meta.assignment.libconfig",
+			"patterns": [
+				{
+					"include": "#value"
+				},
+				{
+					"include": "#comments"
+				},
+				{
+					"match": ".",
+					"name": "invalid.illegal.object-assignment.libconfig"
+				}
+			]
+		},
+		"string-content": {
+			"patterns": [
+				{
+					"match": "(?x)\\\\(?:[\"\\\\/abfnrtv]|x[0-9a-fA-F]{2})",
+					"name": "constant.character.escape.libconfig"
+				},
+				{
+					"match": "\\\\.",
+					"name": "invalid.illegal.unrecognized-string-escape.libconfig"
+				}
+			]
+		},
+		"scalar-value": {
+			"patterns": [
+				{
+					"include": "#hex"
+				},
+				{
+					"include": "#binary"
+				},
+				{
+					"include": "#octal"
+				},
+				{
+					"include": "#string"
+				},
+				{
+					"include": "#constant"
+				},
+				{
+					"include": "#integer"
+				},
+				{
+					"include": "#double"
+				},
+				{
+					"include": "#comments"
+				}
+			]
+		},
+		"value": {
+			"patterns": [
+				{
+					"include": "#scalar-value"
+				},
+				{
+					"include": "#array"
+				},
+				{
+					"include": "#list"
+				},
+				{
+					"include": "#object"
+				}
+			]
+		},
+		"binary": {
+			"match": "[+-]?0[bB][01]+L{0,2}",
+			"name": "constant.numeric.libconfig"
+		},
+		"octal": {
+			"match": "[+-]?0[oOqQ][0-7]+L{0,2}",
+			"name": "constant.numeric.libconfig"
+		}
+	},
+	"binary": {
+		"match": "[+-]?0[bB][01]+L{0,2}",
+		"name": "constant.numeric.libconfig"
+	},
+	"octal": {
+		"match": "[+-]?0[oOqQ][0-7]+L{0,2}",
+		"name": "constant.numeric.libconfig"
+	}
+}

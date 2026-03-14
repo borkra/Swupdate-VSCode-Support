@@ -1,0 +1,22 @@
+{
+	"name": "swupdate-lang-client",
+	"description": "Client component for the SWUpdate VS Code language extension.",
+	"author": "borkra",
+	"license": "MIT",
+	"version": "1.0.4",
+	"private": true,
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/borkra/swupdate-vscode-support"
+	},
+	"engines": {
+		"vscode": "^1.82.0"
+	},
+	"dependencies": {
+		"vscode-languageclient": "^9.0.1"
+	},
+	"devDependencies": {
+		"@types/node": "^16.0.0",
+		"@types/vscode": "^1.82.0"
+	}
+}

@@ -1,0 +1,21 @@
+software = {
+	update-type = "application";
+	hardware-compatibility: [ "1.0" ];
+	images: (
+		{
+			type = "raw";
+			compressed = "xz";
+			encrypted = "aes-cbc";
+		}
+	);
+	files: (
+		{
+			type = "archive";
+		}
+	);
+	scripts: (
+		{
+			type = "lua";
+		}
+	);
+};

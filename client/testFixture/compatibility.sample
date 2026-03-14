@@ -1,0 +1,5 @@
+portable = 1;
+commaTerminator = 2,
+missingTerminator = 3
+listTrailingComma = (1, 2, )
+arrayTrailingComma = [1, 2, ]
