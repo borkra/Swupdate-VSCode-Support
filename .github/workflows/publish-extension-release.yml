@@ -1,0 +1,106 @@
+name: Publish Extension Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release version (for example, 1.0.5)
+        required: true
+        type: string
+  pull_request_target:
+    types:
+      - labeled
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  prepare-release:
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request_target' && (startsWith(github.event.label.name, 'release:') || startsWith(github.event.label.name, 'v'))) }}
+    runs-on: ubuntu-latest
+    outputs:
+      release_tag: ${{ steps.release.outputs.release_tag }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: master
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Configure git user
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Resolve version from trigger
+        id: resolve-version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            version="${{ inputs.version }}"
+          else
+            label="${{ github.event.label.name }}"
+            case "$label" in
+              release:v*) version="${label#release:v}" ;;
+              release:*) version="${label#release:}" ;;
+              v*) version="${label#v}" ;;
+              *)
+                echo "Label '$label' does not encode a release version."
+                echo "Use label format 'release:vX.Y.Z' (for example, release:v1.0.5)."
+                exit 1
+                ;;
+            esac
+          fi
+
+          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "Invalid version: $version"
+            exit 1
+          fi
+
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Create release commit and tag
+        id: release
+        run: |
+          version="${{ steps.resolve-version.outputs.version }}"
+          npm version "$version" -m "chore(release): v%s"
+          git push origin HEAD:master --follow-tags
+          echo "release_tag=v$version" >> "$GITHUB_OUTPUT"
+
+  publish-vsix:
+    needs: [prepare-release]
+    if: ${{ github.event_name == 'push' || needs.prepare-release.result == 'success' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'push' && github.ref_name || needs.prepare-release.outputs.release_tag }}
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build extension
+        run: npm run compile && npm run bundle
+
+      - name: Package VSIX
+        run: npx @vscode/vsce package --no-yarn --out libconfig-lang.vsix
+
+      - name: Publish GitHub release with VSIX
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event_name == 'push' && github.ref_name || needs.prepare-release.outputs.release_tag }}
+          files: libconfig-lang.vsix
+          generate_release_notes: true

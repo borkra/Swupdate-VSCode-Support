@@ -1,0 +1,9 @@
+software = {
+	update-type = true;
+	images: (
+		{
+			filename = "rootfs.ext4.gz";
+			sha256 = "$swupdate_get_sha256(rootfs.ext4.gz)";
+		}
+	);
+};
