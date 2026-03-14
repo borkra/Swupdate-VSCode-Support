@@ -1,7 +1,7 @@
 {
 	"name": "swupdate-lang-server",
 	"description": "Language server for the SWUpdate VS Code extension.",
-	"version": "1.0.4",
+	"version": "1.0.0",
 	"author": "borkra",
 	"license": "MIT",
 	"private": true,

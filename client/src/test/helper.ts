@@ -1,5 +1,5 @@
 /* --------------------------------------------------------------------------------------------
- * Copyright (c) Microsoft Corporation. All rights reserved.
+ * Copyright (c) SWUpdate VS Code Support contributors.
  * Licensed under the MIT License. See License.txt in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
 
@@ -17,8 +17,7 @@ export let platformEol: string;
 export async function activate(docUri: vscode.Uri) {
 	const extensionIds = [
 		'boris-krasnovskiy.libconfig-lang',
-		'borkra.libconfig-lang',
-		'tmulligan.libconfig-lang'
+		'borkra.libconfig-lang'
 	];
 
 	const ext = extensionIds

@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Release version (for example, 1.0.5)
+        description: Release version (for example, 1.0.0)
         required: true
         type: string
   pull_request_target:
@@ -28,7 +28,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
-          ref: master
+          ref: main
           fetch-depth: 0
 
       - name: Set up Node.js
@@ -57,7 +57,7 @@ jobs:
               v*) version="${label#v}" ;;
               *)
                 echo "Label '$label' does not encode a release version."
-                echo "Use label format 'release:vX.Y.Z' (for example, release:v1.0.5)."
+                echo "Use label format 'release:vX.Y.Z' (for example, release:v1.0.0)."
                 exit 1
                 ;;
             esac
@@ -74,8 +74,12 @@ jobs:
         id: release
         run: |
           version="${{ steps.resolve-version.outputs.version }}"
-          npm version "$version" -m "chore(release): v%s"
-          git push origin HEAD:master --follow-tags
+          npm version "$version" --no-git-tag-version
+          npm run update:version
+          git add package.json package-lock.json client/package.json client/package-lock.json server/package.json server/package-lock.json
+          git commit -m "chore(release): v$version"
+          git tag "v$version"
+          git push origin HEAD:main --follow-tags
           echo "release_tag=v$version" >> "$GITHUB_OUTPUT"
 
   publish-vsix:
@@ -96,11 +100,11 @@ jobs:
         run: npm run compile && npm run bundle
 
       - name: Package VSIX
-        run: npx @vscode/vsce package --no-yarn --out libconfig-lang.vsix
+        run: npx @vscode/vsce package --no-yarn --out swupdate-lang.vsix
 
       - name: Publish GitHub release with VSIX
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event_name == 'push' && github.ref_name || needs.prepare-release.outputs.release_tag }}
-          files: libconfig-lang.vsix
+          files: swupdate-lang.vsix
           generate_release_notes: true

@@ -3,7 +3,7 @@
 	"description": "Client component for the SWUpdate VS Code language extension.",
 	"author": "borkra",
 	"license": "MIT",
-	"version": "1.0.4",
+	"version": "1.0.0",
 	"private": true,
 	"repository": {
 		"type": "git",
