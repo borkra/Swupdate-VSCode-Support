@@ -1,9 +1,9 @@
 'use strict';
 
 import {
-	TextDocument,
 	Diagnostic
 } from 'vscode-languageserver/node';
+import { TextDocument } from 'vscode-languageserver-textdocument';
 
 import {
 	ParseLibConfigDocument

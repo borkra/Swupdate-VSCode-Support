@@ -1,11 +1,11 @@
 'use strict';
 
 import {
-	TextDocument,
 	Diagnostic,
 	DiagnosticSeverity,
 	Range
 } from 'vscode-languageserver';
+import { TextDocument } from 'vscode-languageserver-textdocument';
 import {
 	CreateDefaultScanner
 } from '../scanner/impl/generateScanner';
