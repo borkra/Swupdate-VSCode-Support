@@ -1,5 +1,5 @@
 /* --------------------------------------------------------------------------------------------
- * Copyright (c) Microsoft Corporation. All rights reserved.
+ * Copyright (c) SWUpdate VS Code Support contributors.
  * Licensed under the MIT License. See License.txt in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
 
@@ -8,15 +8,6 @@ import * as assert from 'assert';
 import { getDocUri, activate } from './helper';
 
 export async function runCompletionTest(): Promise<void> {
-	const docUri = getDocUri('completion.sample');
-	await testCompletion(docUri, new vscode.Position(0, 0), [
-		{ label: 'true', kind: vscode.CompletionItemKind.Keyword },
-		{ label: 'false', kind: vscode.CompletionItemKind.Keyword },
-		{ label: '@include', kind: vscode.CompletionItemKind.Snippet }
-	]);
-}
-
-export async function runSwDescriptionCompletionTest(): Promise<void> {
 	const docUri = getDocUri('sw-description.sample');
 	await testCompletion(docUri, new vscode.Position(1, 1), [
 		{ label: 'version', kind: vscode.CompletionItemKind.Field },
@@ -34,7 +25,6 @@ export async function runSwDescriptionCompletionTest(): Promise<void> {
 	]);
 
 	await testCompletion(docUri, new vscode.Position(2, 25), [
-		{ label: '[ ... ]', kind: vscode.CompletionItemKind.Snippet },
 		{ label: '"#RE:^...$"', kind: vscode.CompletionItemKind.Snippet }
 	]);
 

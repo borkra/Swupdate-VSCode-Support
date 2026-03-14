@@ -1,24 +1,27 @@
-# SWUpdate README
+# SWUpdate for VS Code
 
-A companion VS Code extension for SWUpdate `sw-description*` files.
+SWUpdate for VS Code helps you edit `sw-description` files faster and with fewer mistakes.
 
-## Features
+## What You Get
 
-- Works together with the base LibConfig extension (`borkra.libconfig-lang`)
-- Adds SWUpdate-specific completion tailored for sections and keys
-- Adds SWUpdate semantic validation (warnings)
-- Avoids duplicating base language registration, grammar, formatting, folding, and generic libconfig diagnostics
+- Smart completion for common SWUpdate keys and sections
+- Context-aware suggestions while editing `sw-description*` files
+- Helpful validation messages for typical SWUpdate issues
 
-## Extension Settings
-
-- `swupdateServer.trace.server`: traces communication between VS Code and the language server (`off`, `messages`, `verbose`)
-
-## Notes
+## Getting Started
 
 Install both extensions:
 
-1. LibConfig base extension (`borkra.libconfig-lang`)
-2. This SWUpdate companion extension
+1. LibConfig base extension
+2. SWUpdate extension
 
-The base extension provides language registration, syntax highlighting, and core libconfig rules.
-This companion adds SWUpdate-specific intelligence on top for `sw-description*` files.
+Then open your `sw-description` file in VS Code. Suggestions and validation appear automatically as you type.
+
+## Settings
+
+- `swupdateServer.trace.server`: enable language server trace logs (`off`, `messages`, `verbose`)
+
+## Notes
+
+- This extension is focused on SWUpdate authoring support.
+- Validation messages are informational and intended to help catch common problems early.

@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - master
+      - main
     paths:
       - README.md
       - CHANGELOG.md
@@ -25,7 +25,7 @@ on:
       - server/src/**
   pull_request:
     branches:
-      - master
+      - main
     paths:
       - README.md
       - CHANGELOG.md
@@ -60,11 +60,11 @@ jobs:
         run: npm run compile && npm run bundle
 
       - name: Package VSIX
-        run: npx @vscode/vsce package --no-yarn --out libconfig-lang.vsix
+        run: npx @vscode/vsce package --no-yarn --out swupdate-lang.vsix
 
       - name: Upload VSIX artifact
         uses: actions/upload-artifact@v7
         with:
-          name: libconfig-lang-vsix
-          path: libconfig-lang.vsix
+          name: swupdate-lang-vsix
+          path: swupdate-lang.vsix
           if-no-files-found: error
