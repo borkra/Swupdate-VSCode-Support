@@ -1,0 +1,14 @@
+{
+	"editor.insertSpaces": false,
+	"files.associations": {
+		"sw-description": "libconfig",
+		"sw-description*": "libconfig"
+	},
+	"problems.exclude": {
+		"**/client/testFixture/sw-description-invalid.sample": true,
+		"**/client/testFixture/sw-description-generated-sha.sample": true
+	},
+	"tslint.enable": true,
+	"js/ts.tsc.autoDetect": "off",
+	"js/ts.preferences.quoteStyle": "single"
+}
