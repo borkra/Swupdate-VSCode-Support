@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2026 borkra
 'use strict';
 
 export const SW_DESCRIPTION_BOOLEAN_KEYS = [

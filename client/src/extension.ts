@@ -181,6 +181,10 @@ function registerLibconfigBridge(
 		if (lastSyncedVersion === requestedVersion) {
 			return;
 		}
+		// Already in-flight for this exact version — skip to avoid duplicate work
+		if (requestedVersions.get(documentUri) === requestedVersion) {
+			return;
+		}
 		requestedVersions.set(documentUri, requestedVersion);
 		enforceMapSizeLimit(requestedVersions);
 
