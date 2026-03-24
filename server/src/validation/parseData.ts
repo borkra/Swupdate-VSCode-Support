@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2026 borkra
 import { Diagnostic } from 'vscode-languageserver/node';
 
 export interface ParsedLibconfigNode {
