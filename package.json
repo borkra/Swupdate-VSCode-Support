@@ -30,6 +30,9 @@
 					"SWUpdate",
 					"swupdate"
 				],
+				"filenames": [
+					"sw-description"
+				],
 				"filenamePatterns": [
 					"sw-description*"
 				],

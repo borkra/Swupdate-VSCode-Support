@@ -1,0 +1,11 @@
+software = {
+	partitions: (
+		{
+			type = "diskpart";
+			properties: {
+				labeltype = "mbr";
+				partition-1 = ["size=64M", "name=test"];
+			};
+		}
+	);
+};

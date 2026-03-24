@@ -15,6 +15,8 @@ import {
 	SW_DESCRIPTION_AES_KEY_REGEX,
 	SW_DESCRIPTION_BOOLEAN_KEYS,
 	SW_DESCRIPTION_COMPRESSED_VALUES,
+	SW_DESCRIPTION_DISKPART_LABELTYPE_VALUES,
+	SW_DESCRIPTION_EXTERNAL_VARIABLE_REGEX,
 	SW_DESCRIPTION_FILESYSTEM_VALUES,
 	SW_DESCRIPTION_IVT_REGEX,
 	SW_DESCRIPTION_OFFSET_REGEX,
@@ -30,19 +32,23 @@ import type { SwDescriptionTypeSection } from './definitions';
 const booleanKeys = new Set<string>(SW_DESCRIPTION_BOOLEAN_KEYS as readonly string[]);
 const stringKeys = new Set<string>(SW_DESCRIPTION_STRING_KEYS as readonly string[]);
 const compressedValues = new Set<string>(SW_DESCRIPTION_COMPRESSED_VALUES as readonly string[]);
+const diskpartLabeltypeValues = new Set<string>(SW_DESCRIPTION_DISKPART_LABELTYPE_VALUES as readonly string[]);
 const filesystemValues = new Set<string>(SW_DESCRIPTION_FILESYSTEM_VALUES as readonly string[]);
 
 // Pre-computed error message strings
+const DISKPART_LABELTYPE_VALUES_MSG = SW_DESCRIPTION_DISKPART_LABELTYPE_VALUES.join(', ');
 const FILESYSTEM_VALUES_MSG = SW_DESCRIPTION_FILESYSTEM_VALUES.join(', ');
 const TYPE_VALUES_MSG: Readonly<Record<string, string>> = Object.fromEntries(
 	Object.entries(SW_DESCRIPTION_TYPE_VALUES_BY_SECTION).map(([k, v]) => [k, (v as readonly string[]).join(', ')])
 );
+const DISKPART_PARTITION_KEY_REGEX = /^partition-\d+$/i;
 
 // Validation configuration - maps property keys to their validation logic
 type ValidationContext = {
 	property: LibConfigPropertyNode;
 	value: BaseLibConfigNode;
 	addWarning: (node: LibConfigPropertyNode | BaseLibConfigNode, message: string) => void;
+	addError: (node: LibConfigPropertyNode | BaseLibConfigNode, message: string) => void;
 	section?: SwDescriptionTypeSection;
 };
 
@@ -122,10 +128,25 @@ const propertyValidators: Record<string, Validator> = {
 			}
 		}
 	},
+	'labeltype': (ctx) => {
+		if (ctx.section !== 'partitions') {
+			return;
+		}
+		if (ctx.value.type !== 'string') {
+			ctx.addError(ctx.property, "Expected string value for 'labeltype'.");
+			return;
+		}
+		const stringValue = readStringValue(ctx.value);
+		if (stringValue !== null && !diskpartLabeltypeValues.has(stringValue.toLowerCase())) {
+			ctx.addError(ctx.property, `Unsupported labeltype. Expected one of: ${DISKPART_LABELTYPE_VALUES_MSG}.`);
+		}
+	},
 	'offset': (ctx) => {
 		const stringValue = readStringValue(ctx.value);
-		if (stringValue !== null && !SW_DESCRIPTION_OFFSET_REGEX.test(stringValue)) {
-			ctx.addWarning(ctx.property, "'offset' should be a decimal string with optional K, M, or G suffix.");
+		if (stringValue !== null && 
+			!SW_DESCRIPTION_OFFSET_REGEX.test(stringValue) && 
+			!SW_DESCRIPTION_EXTERNAL_VARIABLE_REGEX.test(stringValue)) {
+			ctx.addWarning(ctx.property, "'offset' should be a decimal string with optional K, M, or G suffix, or an external variable using @@variable@@ syntax.");
 		}
 	},
 	'size': (ctx) => {
@@ -135,11 +156,13 @@ const propertyValidators: Record<string, Validator> = {
 		}
 		if (ctx.value.type === 'string') {
 			const stringValue = readStringValue(ctx.value);
-			if (stringValue !== null && !SW_DESCRIPTION_SIZE_REGEX.test(stringValue)) {
-				ctx.addWarning(ctx.property, "'size' should be a number or a decimal string with optional K, M, or G suffix.");
+			if (stringValue !== null && 
+				!SW_DESCRIPTION_SIZE_REGEX.test(stringValue) && 
+				!SW_DESCRIPTION_EXTERNAL_VARIABLE_REGEX.test(stringValue)) {
+				ctx.addError(ctx.property, "'size' should be a number or a decimal string with optional K, M, or G suffix, or an external variable using @@variable@@ syntax.");
 			}
 		} else {
-			ctx.addWarning(ctx.property, "Invalid partition 'size' value. Expected number or string.");
+			ctx.addError(ctx.property, "Invalid partition 'size' value. Expected number or string.");
 		}
 	},
 	'type': (ctx) => {
@@ -198,11 +221,19 @@ export function getSwDescriptionSemanticDiagnostics(
 ): Diagnostic[] {
 	const diagnostics: Diagnostic[] = [];
 
-	const addWarning = (node: LibConfigPropertyNode | BaseLibConfigNode, message: string) => {
+	const addDiagnostic = (node: LibConfigPropertyNode | BaseLibConfigNode, message: string, severity: DiagnosticSeverity) => {
 		const startOffset = node.offset;
 		const endOffset = node.offset + Math.max(node.length, 1);
 		const range = Range.create(textDocument.positionAt(startOffset), textDocument.positionAt(endOffset));
-		diagnostics.push(Diagnostic.create(range, message, DiagnosticSeverity.Warning));
+		diagnostics.push(Diagnostic.create(range, message, severity));
+	};
+
+	const addWarning = (node: LibConfigPropertyNode | BaseLibConfigNode, message: string) => {
+		addDiagnostic(node, message, DiagnosticSeverity.Warning);
+	};
+
+	const addError = (node: LibConfigPropertyNode | BaseLibConfigNode, message: string) => {
+		addDiagnostic(node, message, DiagnosticSeverity.Error);
 	};
 
 	const validateProperty = (property: LibConfigPropertyNode, section?: SwDescriptionTypeSection) => {
@@ -227,8 +258,10 @@ export function getSwDescriptionSemanticDiagnostics(
 		// Run specific validator if one exists for this key
 		const validator = propertyValidators[key];
 		if (validator) {
-			validator({ property, value, addWarning, section });
+			validator({ property, value, addWarning, addError, section });
 		}
+
+		validateDiskpartPartitionProperty(property, value, addWarning, addError, section);
 	};
 
 	walkProperties(rootSettings as LibConfigPropertyNode[], validateProperty, undefined);
@@ -284,4 +317,45 @@ function readArrayChildren(node: BaseLibConfigNode): BaseLibConfigNode[] {
 		return [];
 	}
 	return ((node as ArrayLibConfigNode).children || []) as BaseLibConfigNode[];
+}
+
+function validateDiskpartPartitionProperty(
+	property: LibConfigPropertyNode,
+	value: BaseLibConfigNode,
+	addWarning: (node: LibConfigPropertyNode | BaseLibConfigNode, message: string) => void,
+	addError: (node: LibConfigPropertyNode | BaseLibConfigNode, message: string) => void,
+	section?: SwDescriptionTypeSection
+): void {
+	if (section !== 'partitions' || !DISKPART_PARTITION_KEY_REGEX.test(property.name)) {
+		return;
+	}
+
+	if (value.type !== 'array') {
+		addWarning(property, `Expected array value for '${property.name}'.`);
+		return;
+	}
+
+	for (const item of readArrayChildren(value)) {
+		const entry = readStringValue(item);
+		if (entry === null) {
+			addWarning(item, `Expected string entry in '${property.name}'.`);
+			continue;
+		}
+
+		const separatorIndex = entry.indexOf('=');
+		if (separatorIndex === -1) {
+			continue;
+		}
+
+		const entryKey = entry.slice(0, separatorIndex).trim().toLowerCase();
+		const entryValue = entry.slice(separatorIndex + 1).trim();
+
+		if (
+			entryKey === 'size' &&
+			!SW_DESCRIPTION_SIZE_REGEX.test(entryValue) &&
+			!SW_DESCRIPTION_EXTERNAL_VARIABLE_REGEX.test(entryValue)
+		) {
+			addError(item, "Invalid partition 'size' value. Expected a decimal string with optional K, M, or G suffix, or an external variable using @@variable@@ syntax.");
+		}
+	}
 }
