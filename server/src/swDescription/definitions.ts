@@ -12,16 +12,13 @@ export const SW_DESCRIPTION_BOOLEAN_KEYS = [
 
 export const SW_DESCRIPTION_STRING_KEYS = [
 	'update-type',
+	'fstype',
 	'aes-key',
 	'ivt',
 	'sha256',
 	'hook',
 	'ubipartition',
 	'ref'
-] as const;
-
-export const SW_DESCRIPTION_NUMERIC_KEYS = [
-	'size'
 ] as const;
 
 export const SW_DESCRIPTION_COLON_VALUE_KEYS = [
@@ -37,6 +34,14 @@ export const SW_DESCRIPTION_COMPRESSED_VALUES = [
 
 export const SW_DESCRIPTION_ENCRYPTED_VALUES = [
 	'aes-cbc'
+] as const;
+
+export const SW_DESCRIPTION_FILESYSTEM_VALUES = [
+	'vfat',
+	'ext2',
+	'ext3',
+	'ext4',
+	'btrfs'
 ] as const;
 
 export const SW_DESCRIPTION_UPDATE_TYPE_VALUES = [
@@ -57,12 +62,38 @@ export const SW_DESCRIPTION_FILE_TYPE_VALUES = [
 	'rawfile'
 ] as const;
 
+export const SW_DESCRIPTION_PARTITION_TYPE_VALUES = [
+	'diskpart',
+	'diskformat',
+	'toggleboot',
+	'uniqueuuid',
+	'ubipartition',
+	'btrfs'
+] as const;
+
 export const SW_DESCRIPTION_SCRIPT_TYPE_VALUES = [
 	'lua',
 	'shellscript',
+	'emmc_boot',
 	'preinstall',
 	'postinstall'
 ] as const;
+
+export type SwDescriptionTypeSection = 'images' | 'files' | 'partitions' | 'scripts';
+
+export const SW_DESCRIPTION_TYPE_VALUES_BY_SECTION: Readonly<Record<SwDescriptionTypeSection, readonly string[]>> = {
+	images: SW_DESCRIPTION_IMAGE_TYPE_VALUES,
+	files: SW_DESCRIPTION_FILE_TYPE_VALUES,
+	partitions: SW_DESCRIPTION_PARTITION_TYPE_VALUES,
+	scripts: SW_DESCRIPTION_SCRIPT_TYPE_VALUES
+} as const;
+
+export const SW_DESCRIPTION_TYPE_VALUE_SETS_BY_SECTION: Readonly<Record<SwDescriptionTypeSection, ReadonlySet<string>>> = {
+	images: new Set<string>(SW_DESCRIPTION_TYPE_VALUES_BY_SECTION.images),
+	files: new Set<string>(SW_DESCRIPTION_TYPE_VALUES_BY_SECTION.files),
+	partitions: new Set<string>(SW_DESCRIPTION_TYPE_VALUES_BY_SECTION.partitions),
+	scripts: new Set<string>(SW_DESCRIPTION_TYPE_VALUES_BY_SECTION.scripts)
+} as const;
 
 export const SW_DESCRIPTION_GENERAL_LITERAL_VALUES = [
 	'flash',
@@ -251,7 +282,7 @@ export const SW_DESCRIPTION_STATEMENT_TEMPLATES: readonly SwDescriptionStatement
 		label: 'size',
 		kind: 'field',
 		insertText: 'size = ${1:0};',
-		detail: 'Expected artifact size in bytes'
+		detail: 'Artifact size in bytes or string with K/M/G suffix'
 	},
 	{
 		label: 'ref',
@@ -263,6 +294,8 @@ export const SW_DESCRIPTION_STATEMENT_TEMPLATES: readonly SwDescriptionStatement
 
 export const SW_DESCRIPTION_SHA256_REGEX = /^[0-9a-fA-F]{64}$/;
 export const SW_DESCRIPTION_SHA256_FUNCTION_REGEX = /^\$swupdate_get_sha256\([^\)]+\)$/;
+export const SW_DESCRIPTION_SIZE_REGEX = /^\d+(K|M|G)?$/;
+export const SW_DESCRIPTION_OFFSET_REGEX = SW_DESCRIPTION_SIZE_REGEX;
 export const SW_DESCRIPTION_IVT_REGEX = /^[0-9a-fA-F]{32}$/;
 export const SW_DESCRIPTION_AES_KEY_REGEX = /^[0-9a-fA-F]{32}$|^[0-9a-fA-F]{48}$|^[0-9a-fA-F]{64}$/;
 

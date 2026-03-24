@@ -7,37 +7,24 @@ const {
   resolveCliPathFromVSCodeExecutablePath
 } = require('@vscode/test-electron');
 
-const LIBCONFIG_EXTENSION_IDS = [
-  'borkra.libconfig-lang',
-  'boris-krasnovskiy.libconfig-lang'
-];
+const { extensionDependencies } = require('../package.json');
 
 function installDependency(vscodeExecutablePath, extensionsDir, userDataDir) {
   const cliPath = resolveCliPathFromVSCodeExecutablePath(vscodeExecutablePath);
-  let lastError = null;
 
-  for (const extensionId of LIBCONFIG_EXTENSION_IDS) {
+  const candidates = [
+    process.env.LIBCONFIG_VSIX_PATH,
+    ...extensionDependencies
+  ].filter(c => c && (!c.endsWith('.vsix') || fs.existsSync(c)));
+
+  for (const candidate of candidates) {
     try {
-      execFileSync(
-        cliPath,
-        [
-          '--install-extension',
-          extensionId,
-          '--force',
-          '--extensions-dir',
-          extensionsDir,
-          '--user-data-dir',
-          userDataDir
-        ],
-        { stdio: 'inherit' }
-      );
-      return extensionId;
-    } catch (error) {
-      lastError = error;
-    }
+      execFileSync(cliPath, ['--install-extension', candidate, '--force', '--extensions-dir', extensionsDir, '--user-data-dir', userDataDir], { stdio: 'inherit' });
+      return candidate;
+    } catch (_) {}
   }
 
-  throw new Error(`Failed to install LibConfig dependency. Last error: ${String(lastError)}`);
+  throw new Error(`Failed to install extension dependencies: ${extensionDependencies.join(', ')}`);
 }
 
 async function main() {
@@ -48,9 +35,6 @@ async function main() {
     const userDataDir = path.resolve(__dirname, '../.vscode-test/user-data');
     const extensionsDir = path.resolve(__dirname, '../.vscode-test/extensions');
     const vscodeExecutablePath = await downloadAndUnzipVSCode('stable');
-
-    fs.mkdirSync(userDataDir, { recursive: true });
-    fs.mkdirSync(extensionsDir, { recursive: true });
 
     const installedDependency = installDependency(vscodeExecutablePath, extensionsDir, userDataDir);
     console.log(`Installed test dependency: ${installedDependency}`);

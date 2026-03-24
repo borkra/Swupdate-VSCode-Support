@@ -1,0 +1,41 @@
+{
+	"name": "SWUpdate",
+	"scopeName": "source.swupdate",
+	"patterns": [
+		{
+			"include": "source.libconfig"
+		}
+	],
+	"injectionSelector": "L:source.swupdate string.quoted.double.libconfig",
+	"repository": {
+		"swupdate-function": {
+			"match": "(\\$)(swupdate_get_sha256)(\\()([^)]*)(\\))",
+			"captures": {
+				"1": {
+					"name": "punctuation.definition.variable.swupdate"
+				},
+				"2": {
+					"name": "entity.name.function.swupdate"
+				},
+				"3": {
+					"name": "punctuation.section.parens.begin.swupdate"
+				},
+				"4": {
+					"name": "variable.parameter.swupdate"
+				},
+				"5": {
+					"name": "punctuation.section.parens.end.swupdate"
+				}
+			}
+		}
+	},
+	"injections": {
+		"L:source.swupdate string.quoted.double.libconfig": {
+			"patterns": [
+				{
+					"include": "#swupdate-function"
+				}
+			]
+		}
+	}
+}

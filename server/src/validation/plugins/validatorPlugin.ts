@@ -6,12 +6,12 @@ import {
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
 import {
-	LibConfigDocument
-} from '../../dataClasses';
+    ParsedLibconfigDocument
+} from '../parseData';
 
 export interface ValidationPluginContext {
 	textDocument: TextDocument;
-	libConfigDocument: LibConfigDocument;
+	parsedDocument: ParsedLibconfigDocument;
 }
 
 export interface ValidationPlugin {

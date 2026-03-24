@@ -52,7 +52,8 @@ export async function runCompletionTest(): Promise<void> {
 
 	await testCompletion(docUri, new vscode.Position(17, 10), [
 		{ label: '"lua"', kind: vscode.CompletionItemKind.Value },
-		{ label: '"shellscript"', kind: vscode.CompletionItemKind.Value }
+		{ label: '"shellscript"', kind: vscode.CompletionItemKind.Value },
+		{ label: '"emmc_boot"', kind: vscode.CompletionItemKind.Value }
 	]);
 }
 

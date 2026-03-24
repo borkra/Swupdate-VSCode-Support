@@ -5,6 +5,8 @@
 
 import * as vscode from 'vscode';
 import * as path from 'path';
+import * as fs from 'fs/promises';
+import * as os from 'os';
 
 export let doc: vscode.TextDocument;
 export let editor: vscode.TextEditor;
@@ -15,9 +17,54 @@ export let platformEol: string;
  * Activates the vscode.lsp-sample extension
  */
 export async function activate(docUri: vscode.Uri) {
+	await activateExtensions();
+	try {
+		doc = await vscode.workspace.openTextDocument(docUri);
+			doc = await vscode.languages.setTextDocumentLanguage(doc, 'swupdate');
+		editor = await vscode.window.showTextDocument(doc);
+		await sleep(2000); // Wait for server activation
+	} catch (e) {
+		console.error(e);
+	}
+}
+
+export async function activateFixtureDocument(fileName: string): Promise<vscode.Uri> {
+	await activateExtensions();
+	try {
+		const content = await fs.readFile(getDocPath(fileName), 'utf8');
+		const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'swupdate-test-'));
+		const tempFilePath = path.join(tempDir, fileName);
+		await fs.writeFile(tempFilePath, content, 'utf8');
+		doc = await vscode.workspace.openTextDocument(vscode.Uri.file(tempFilePath));
+			doc = await vscode.languages.setTextDocumentLanguage(doc, 'swupdate');
+		editor = await vscode.window.showTextDocument(doc);
+		await sleep(2000); // Wait for server activation
+		return doc.uri;
+	} catch (e) {
+		console.error(e);
+		throw e;
+	}
+}
+
+async function activateExtensions() {
+	const swupdateExtensionIds = [
+		'borkra.swupdate-lang',
+		'swupdate-lang'
+	];
+
+	const swupdateExt = swupdateExtensionIds
+		.map((id) => vscode.extensions.getExtension(id))
+		.find((candidate) => !!candidate);
+
+	if (!swupdateExt) {
+		throw new Error('SWUpdate extension under test is not installed for tests.');
+	}
+	await swupdateExt.activate();
+
 	const extensionIds = [
-		'boris-krasnovskiy.libconfig-lang',
-		'borkra.libconfig-lang'
+		'borkra.libconfig-lang',
+		'tmulligan.libconfig-lang',
+		'boris-krasnovskiy.libconfig-lang'
 	];
 
 	const ext = extensionIds
@@ -28,14 +75,6 @@ export async function activate(docUri: vscode.Uri) {
 		throw new Error('LibConfig extension is not installed for tests.');
 	}
 	await ext.activate();
-	try {
-		doc = await vscode.workspace.openTextDocument(docUri);
-		doc = await vscode.languages.setTextDocumentLanguage(doc, 'libconfig');
-		editor = await vscode.window.showTextDocument(doc);
-		await sleep(2000); // Wait for server activation
-	} catch (e) {
-		console.error(e);
-	}
 }
 
 async function sleep(ms: number) {

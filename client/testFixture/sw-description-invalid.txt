@@ -1,0 +1,26 @@
+software = {
+	update-type = true;
+	partitions: (
+		{
+			type = "badpart";
+			size = "12X";
+		},
+		{
+			type = "diskpart";
+			properties: {
+				partition-1 = ["size=64M23", "name=test"];
+			};
+		}
+	);
+	images: (
+		{
+			type = "flash132";
+			compressed = "brotli";
+			encrypted = 1;
+			offset = "12X";
+			fstype = "ext4hfherkq";
+			aes-key = "0011";
+			sha256 = "abcd";
+		}
+	);
+};
