@@ -9,6 +9,7 @@ import {
 import {
 	SW_DESCRIPTION_COLON_VALUE_KEYS,
 	SW_DESCRIPTION_COMPRESSED_VALUES,
+	SW_DESCRIPTION_DISKPART_LABELTYPE_VALUES,
 	SW_DESCRIPTION_ENCRYPTED_VALUES,
 	SW_DESCRIPTION_GENERAL_LITERAL_VALUES,
 	SW_DESCRIPTION_STATEMENT_TEMPLATES,
@@ -44,6 +45,8 @@ const SW_DESCRIPTION_ENCRYPTED_ITEMS: CompletionItem[] = [
 	{ label: 'true', kind: CompletionItemKind.Keyword, insertText: 'true' }
 ];
 
+const SW_DESCRIPTION_DISKPART_LABELTYPE_ITEMS = createLiteralValueCompletions(SW_DESCRIPTION_DISKPART_LABELTYPE_VALUES);
+
 const SW_DESCRIPTION_UPDATE_TYPE_ITEMS = createLiteralValueCompletions(SW_DESCRIPTION_UPDATE_TYPE_VALUES);
 
 const SW_DESCRIPTION_TYPE_ITEMS_BY_SECTION: Readonly<Record<SwDescriptionTypeSection, CompletionItem[]>> = {
@@ -67,6 +70,7 @@ type ValueCompletionProvider = (context: ValueCompletionContext) => CompletionIt
 const valueCompletionsByAssignmentKey: Readonly<Record<string, ValueCompletionProvider>> = {
 	compressed: provideCompressedValueCompletions,
 	encrypted: provideEncryptedValueCompletions,
+	labeltype: provideLabeltypeValueCompletions,
 	'update-type': provideUpdateTypeValueCompletions,
 	type: provideTypeValueCompletions
 };
@@ -137,6 +141,14 @@ function provideCompressedValueCompletions(_context: ValueCompletionContext): Co
 
 function provideEncryptedValueCompletions(_context: ValueCompletionContext): CompletionItem[] {
 	return SW_DESCRIPTION_ENCRYPTED_ITEMS;
+}
+
+function provideLabeltypeValueCompletions(context: ValueCompletionContext): CompletionItem[] {
+	const parentSection = getCurrentSwDescriptionSection(context.textBeforeLine);
+	if (parentSection !== 'partitions') {
+		return getSwDescriptionValueCompletions();
+	}
+	return SW_DESCRIPTION_DISKPART_LABELTYPE_ITEMS;
 }
 
 function provideUpdateTypeValueCompletions(_context: ValueCompletionContext): CompletionItem[] {

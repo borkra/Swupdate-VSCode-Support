@@ -1,0 +1,10 @@
+software = {
+	partitions: (
+		{
+			type = "diskpart";
+			properties: {
+				partition-1 = ["size=64M23", "name=test"];
+			};
+		}
+	);
+};

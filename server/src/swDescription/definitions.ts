@@ -44,6 +44,11 @@ export const SW_DESCRIPTION_FILESYSTEM_VALUES = [
 	'btrfs'
 ] as const;
 
+export const SW_DESCRIPTION_DISKPART_LABELTYPE_VALUES = [
+	'gpt',
+	'dos'
+] as const;
+
 export const SW_DESCRIPTION_UPDATE_TYPE_VALUES = [
 	'application',
 	'OS'
@@ -74,9 +79,19 @@ export const SW_DESCRIPTION_PARTITION_TYPE_VALUES = [
 export const SW_DESCRIPTION_SCRIPT_TYPE_VALUES = [
 	'lua',
 	'shellscript',
+	'copy',
 	'emmc_boot',
+	'emmc_boot_toggle',
 	'preinstall',
-	'postinstall'
+	'postinstall',
+	'ssblswitch',
+	'ubiswap',
+	'docker_imagedelete',
+	'docker_imageprune',
+	'docker_containercreate',
+	'docker_containerdelete',
+	'docker_containerstart',
+	'docker_containerstop'
 ] as const;
 
 export type SwDescriptionTypeSection = 'images' | 'files' | 'partitions' | 'scripts';
@@ -298,6 +313,7 @@ export const SW_DESCRIPTION_SIZE_REGEX = /^\d+(K|M|G)?$/;
 export const SW_DESCRIPTION_OFFSET_REGEX = SW_DESCRIPTION_SIZE_REGEX;
 export const SW_DESCRIPTION_IVT_REGEX = /^[0-9a-fA-F]{32}$/;
 export const SW_DESCRIPTION_AES_KEY_REGEX = /^[0-9a-fA-F]{32}$|^[0-9a-fA-F]{48}$|^[0-9a-fA-F]{64}$/;
+export const SW_DESCRIPTION_EXTERNAL_VARIABLE_REGEX = /^@@[^@]+@@$/;
 
 export function isSwDescriptionDocumentUri(uri: string): boolean {
 	const normalizedUri = decodeURIComponent(uri).split('?')[0].split('#')[0];

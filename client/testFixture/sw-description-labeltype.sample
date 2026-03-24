@@ -1,0 +1,10 @@
+software = {
+	partitions: (
+		{
+			type = "diskpart";
+			properties: {
+				labeltype = 
+			};
+		}
+	);
+};
