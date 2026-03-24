@@ -66,6 +66,10 @@ type ValueCompletionContext = {
 
 type ValueCompletionProvider = (context: ValueCompletionContext) => CompletionItem[];
 
+const ASSIGNMENT_KEY_REGEX = /([A-Za-z0-9_-]+)\s*[:=][^:=]*$/;
+const TRAILING_STATEMENT_SEPARATOR_REGEX = /[;{}]\s*$/;
+const SECTION_HEADER_REGEX = /^\s*([A-Za-z0-9_-]+)\s*:\s*\(\s*$/;
+
 // Routes assignment keys to context-specific value completion providers.
 const valueCompletionsByAssignmentKey: Readonly<Record<string, ValueCompletionProvider>> = {
 	compressed: provideCompressedValueCompletions,
@@ -96,7 +100,7 @@ export function getSwDescriptionCompletionItems(
 		return getSwDescriptionValueCompletions();
 	}
 
-	if (trimmedPrefix.length === 0 || /[;{}]\s*$/.test(linePrefix)) {
+	if (trimmedPrefix.length === 0 || TRAILING_STATEMENT_SEPARATOR_REGEX.test(linePrefix)) {
 		return getSwDescriptionStatementCompletions();
 	}
 
@@ -163,74 +167,29 @@ function provideTypeValueCompletions(context: ValueCompletionContext): Completio
 	return SW_DESCRIPTION_TYPE_ITEMS_BY_SECTION[parentSection];
 }
 
-// Cache for assignment key extraction
-// Maps already use internal hash tables optimized for string keys
-const assignmentKeyCache = new Map<string, string | null>();
-const ASSIGNMENT_KEY_CACHE_MAX = 200;
-
 function getCurrentAssignmentKey(linePrefix: string): string | null {
-	// Use truncated prefix as key - Maps handle string keys efficiently
-	const cacheKey = linePrefix.length > 200 ? linePrefix.slice(-200) : linePrefix;
-	let cached = assignmentKeyCache.get(cacheKey);
-	
-	if (cached === undefined) {
-		const match = linePrefix.match(/([A-Za-z0-9_-]+)\s*[:=][^:=]*$/);
-		cached = match ? match[1].toLowerCase() : null;
-		assignmentKeyCache.set(cacheKey, cached);
-		
-		// Simple FIFO eviction
-		if (assignmentKeyCache.size > ASSIGNMENT_KEY_CACHE_MAX) {
-			const firstKey = assignmentKeyCache.keys().next().value;
-			if (firstKey !== undefined) {
-				assignmentKeyCache.delete(firstKey);
-			}
-		}
-	}
-	return cached;
+	const match = ASSIGNMENT_KEY_REGEX.exec(linePrefix);
+	return match ? match[1].toLowerCase() : null;
 }
 
 function isSwDescriptionColonValueKey(key: string | null): boolean {
 	return key !== null && (SW_DESCRIPTION_COLON_VALUE_KEYS as readonly string[]).includes(key);
 }
 
-// Cache for section detection
-// Use Map with string keys - V8's Map is highly optimized for this
-const sectionCache = new Map<string, string | null>();
-const SECTION_CACHE_MAX = 100;
-
 function getCurrentSwDescriptionSection(textBeforeLine: string): string | null {
-	// Use suffix of text as cache key to limit memory
-	const cacheKey = textBeforeLine.length > 500 
-		? textBeforeLine.slice(-500) 
-		: textBeforeLine;
-	
-	let cached = sectionCache.get(cacheKey);
-	if (cached === undefined) {
-		let pos = textBeforeLine.length - 1;
-		cached = null;
-		
-		while (pos >= 0) {
-			const lineStart = textBeforeLine.lastIndexOf('\n', pos - 1) + 1;
-			const line = textBeforeLine.slice(lineStart, pos + 1);
-			const match = line.match(/^\s*([A-Za-z0-9_-]+)\s*:\s*\(\s*$/);
-			if (match) {
-				cached = match[1].toLowerCase();
-				break;
-			}
-			pos = lineStart - 2;
+	let pos = textBeforeLine.length - 1;
+
+	while (pos >= 0) {
+		const lineStart = textBeforeLine.lastIndexOf('\n', pos - 1) + 1;
+		const line = textBeforeLine.slice(lineStart, pos + 1);
+		const match = SECTION_HEADER_REGEX.exec(line);
+		if (match) {
+			return match[1].toLowerCase();
 		}
-		
-		sectionCache.set(cacheKey, cached);
-		
-		// Simple FIFO eviction
-		if (sectionCache.size > SECTION_CACHE_MAX) {
-			const firstKey = sectionCache.keys().next().value;
-			if (firstKey !== undefined) {
-				sectionCache.delete(firstKey);
-			}
-		}
+		pos = lineStart - 2;
 	}
-	return cached;
+
+	return null;
 }
 
 function isSwDescriptionTypeSection(section: string | null): section is SwDescriptionTypeSection {
