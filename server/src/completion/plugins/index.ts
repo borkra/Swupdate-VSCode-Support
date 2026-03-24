@@ -16,7 +16,7 @@ import {
 const completionPlugins: readonly CompletionPlugin[] = [
 	{
 		name: swDescriptionPlugin.name,
-		supports: (context: CompletionPluginContext): boolean => swDescriptionPlugin.supportsUri(context.textDocument.uri),
+		supports: (context: CompletionPluginContext): boolean => swDescriptionPlugin.supportsDocument(context.textDocument),
 		complete: (context: CompletionPluginContext): CompletionItem[] => swDescriptionPlugin.complete(context)
 	}
 ];

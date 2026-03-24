@@ -8,32 +8,193 @@ import {
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
 import {
-	ArrayLibConfigNode,
-	BaseLibConfigNode,
-	LibConfigPropertyNode,
-	ListLibConfigNode,
-	ObjectLibConfigNode
-} from '../dataClasses';
+    ParsedLibconfigNode
+} from '../validation/parseData';
 
 import {
 	SW_DESCRIPTION_AES_KEY_REGEX,
 	SW_DESCRIPTION_BOOLEAN_KEYS,
 	SW_DESCRIPTION_COMPRESSED_VALUES,
+	SW_DESCRIPTION_FILESYSTEM_VALUES,
 	SW_DESCRIPTION_IVT_REGEX,
-	SW_DESCRIPTION_NUMERIC_KEYS,
+	SW_DESCRIPTION_OFFSET_REGEX,
 	SW_DESCRIPTION_SHA256_FUNCTION_REGEX,
 	SW_DESCRIPTION_SHA256_REGEX,
-	SW_DESCRIPTION_STRING_KEYS
+	SW_DESCRIPTION_SIZE_REGEX,
+	SW_DESCRIPTION_STRING_KEYS,
+	SW_DESCRIPTION_TYPE_VALUES_BY_SECTION,
+	SW_DESCRIPTION_TYPE_VALUE_SETS_BY_SECTION
 } from './definitions';
+import type { SwDescriptionTypeSection } from './definitions';
 
 const booleanKeys = new Set<string>(SW_DESCRIPTION_BOOLEAN_KEYS as readonly string[]);
 const stringKeys = new Set<string>(SW_DESCRIPTION_STRING_KEYS as readonly string[]);
-const numericKeys = new Set<string>(SW_DESCRIPTION_NUMERIC_KEYS as readonly string[]);
 const compressedValues = new Set<string>(SW_DESCRIPTION_COMPRESSED_VALUES as readonly string[]);
+const filesystemValues = new Set<string>(SW_DESCRIPTION_FILESYSTEM_VALUES as readonly string[]);
+
+// Pre-computed error message strings
+const FILESYSTEM_VALUES_MSG = SW_DESCRIPTION_FILESYSTEM_VALUES.join(', ');
+const TYPE_VALUES_MSG: Readonly<Record<string, string>> = Object.fromEntries(
+	Object.entries(SW_DESCRIPTION_TYPE_VALUES_BY_SECTION).map(([k, v]) => [k, (v as readonly string[]).join(', ')])
+);
+
+// Validation configuration - maps property keys to their validation logic
+type ValidationContext = {
+	property: LibConfigPropertyNode;
+	value: BaseLibConfigNode;
+	addWarning: (node: LibConfigPropertyNode | BaseLibConfigNode, message: string) => void;
+	section?: SwDescriptionTypeSection;
+};
+
+type Validator = (ctx: ValidationContext) => void;
+
+const propertyValidators: Record<string, Validator> = {
+	'compressed': (ctx) => {
+		if (ctx.value.type === 'string') {
+			const stringValue = readStringValue(ctx.value);
+			if (stringValue) {
+				const normalized = stringValue.toLowerCase();
+				if (!compressedValues.has(normalized)) {
+					ctx.addWarning(ctx.property, "Unsupported compression. Expected one of: 'zlib', 'zstd', 'xz'.");
+				}
+			}
+		} else if (ctx.value.type !== 'boolean') {
+			ctx.addWarning(ctx.property, "Expected string or boolean value for 'compressed'.");
+		}
+	},
+	'encrypted': (ctx) => {
+		if (ctx.value.type !== 'boolean' && ctx.value.type !== 'string') {
+			ctx.addWarning(ctx.property, "Expected string or boolean value for 'encrypted'.");
+		}
+	},
+	'update-type': (ctx) => {
+		const stringValue = readStringValue(ctx.value);
+		if (stringValue !== null && stringValue.trim().length === 0) {
+			ctx.addWarning(ctx.property, "'update-type' should not be empty.");
+		}
+	},
+	'sha256': (ctx) => {
+		const stringValue = readStringValue(ctx.value);
+		if (
+			stringValue !== null &&
+			!SW_DESCRIPTION_SHA256_REGEX.test(stringValue) &&
+			!SW_DESCRIPTION_SHA256_FUNCTION_REGEX.test(stringValue)
+		) {
+			ctx.addWarning(ctx.property, "'sha256' should be a 64-character hexadecimal string.");
+		}
+	},
+	'ivt': (ctx) => {
+		const stringValue = readStringValue(ctx.value);
+		if (stringValue !== null && !SW_DESCRIPTION_IVT_REGEX.test(stringValue)) {
+			ctx.addWarning(ctx.property, "'ivt' should be a 32-character hexadecimal string.");
+		}
+	},
+	'aes-key': (ctx) => {
+		const stringValue = readStringValue(ctx.value);
+		if (stringValue !== null && !SW_DESCRIPTION_AES_KEY_REGEX.test(stringValue)) {
+			ctx.addWarning(ctx.property, "'aes-key' should be a 32/48/64-character hexadecimal string.");
+		}
+	},
+	'hardware-compatibility': (ctx) => {
+		if (ctx.value.type !== 'array') {
+			ctx.addWarning(ctx.property, "Expected array value for 'hardware-compatibility'.");
+		} else {
+			const arrayItems = readArrayChildren(ctx.value);
+			for (const item of arrayItems) {
+				if (item.type !== 'string') {
+					ctx.addWarning(ctx.property, "'hardware-compatibility' array should contain only strings.");
+					break;
+				}
+			}
+		}
+	},
+	'ref': (ctx) => {
+		if (ctx.value.type !== 'string') {
+			ctx.addWarning(ctx.property, "Expected string value for 'ref'.");
+		}
+	},
+	'fstype': (ctx) => {
+		const stringValue = readStringValue(ctx.value);
+		if (stringValue !== null) {
+			const normalized = stringValue.toLowerCase();
+			if (!filesystemValues.has(normalized)) {
+				ctx.addWarning(ctx.property, `Unsupported fstype. Expected one of: ${FILESYSTEM_VALUES_MSG}.`);
+			}
+		}
+	},
+	'offset': (ctx) => {
+		const stringValue = readStringValue(ctx.value);
+		if (stringValue !== null && !SW_DESCRIPTION_OFFSET_REGEX.test(stringValue)) {
+			ctx.addWarning(ctx.property, "'offset' should be a decimal string with optional K, M, or G suffix.");
+		}
+	},
+	'size': (ctx) => {
+		if (ctx.value.type === 'number') {
+			// Number is valid
+			return;
+		}
+		if (ctx.value.type === 'string') {
+			const stringValue = readStringValue(ctx.value);
+			if (stringValue !== null && !SW_DESCRIPTION_SIZE_REGEX.test(stringValue)) {
+				ctx.addWarning(ctx.property, "'size' should be a number or a decimal string with optional K, M, or G suffix.");
+			}
+		} else {
+			ctx.addWarning(ctx.property, "Invalid partition 'size' value. Expected number or string.");
+		}
+	},
+	'type': (ctx) => {
+		// Type validation requires section context
+		if (!ctx.section) {
+			return;
+		}
+		if (ctx.value.type !== 'string') {
+			ctx.addWarning(ctx.property, "Expected string value for 'type'.");
+			return;
+		}
+		const stringValue = readStringValue(ctx.value);
+		if (stringValue !== null) {
+			const typeSet = SW_DESCRIPTION_TYPE_VALUE_SETS_BY_SECTION[ctx.section];
+			if (typeSet && !typeSet.has(stringValue)) {
+				const allowedTypes = TYPE_VALUES_MSG[ctx.section];
+				ctx.addWarning(ctx.property, `Unsupported type for '${ctx.section}'. Expected one of: ${allowedTypes}.`);
+			}
+		}
+	}
+};
+
+interface BaseLibConfigNode {
+	type: ParsedLibconfigNode['type'];
+	offset: number;
+	length: number;
+	value: string | boolean | number | BaseLibConfigNode | null;
+	children?: BaseLibConfigNode[];
+	name?: string;
+}
+
+interface LibConfigPropertyNode extends BaseLibConfigNode {
+	type: 'property';
+	name: string;
+	value: BaseLibConfigNode | null;
+}
+
+interface ObjectLibConfigNode extends BaseLibConfigNode {
+	type: 'object';
+	children: LibConfigPropertyNode[];
+}
+
+interface ListLibConfigNode extends BaseLibConfigNode {
+	type: 'list';
+	children: BaseLibConfigNode[];
+}
+
+interface ArrayLibConfigNode extends BaseLibConfigNode {
+	type: 'array';
+	children: BaseLibConfigNode[];
+}
 
 export function getSwDescriptionSemanticDiagnostics(
 	textDocument: TextDocument,
-	rootSettings: LibConfigPropertyNode[]
+	rootSettings: ParsedLibconfigNode[]
 ): Diagnostic[] {
 	const diagnostics: Diagnostic[] = [];
 
@@ -41,129 +202,72 @@ export function getSwDescriptionSemanticDiagnostics(
 		const startOffset = node.offset;
 		const endOffset = node.offset + Math.max(node.length, 1);
 		const range = Range.create(textDocument.positionAt(startOffset), textDocument.positionAt(endOffset));
-		diagnostics.push(Diagnostic.create(range, message, DiagnosticSeverity.Warning, 0x400, textDocument.languageId));
+		diagnostics.push(Diagnostic.create(range, message, DiagnosticSeverity.Warning));
 	};
 
-	const validateProperty = (property: LibConfigPropertyNode) => {
+	const validateProperty = (property: LibConfigPropertyNode, section?: SwDescriptionTypeSection) => {
 		const key = property.name.toLowerCase();
-		const value = property.value;
+		// For property nodes, the value is in children[0] after LibConfig serialization fix
+		const value = property.value || ((property as any).children?.[0] as BaseLibConfigNode | undefined) || null;
 		if (!value) {
 			return;
 		}
 
+		// Quick type checks for known keys - return early if wrong type
 		if (booleanKeys.has(key) && value.type !== 'boolean') {
 			addWarning(property, `Expected boolean value for '${property.name}'.`);
+			return;
 		}
 
 		if (stringKeys.has(key) && value.type !== 'string') {
 			addWarning(property, `Expected string value for '${property.name}'.`);
+			return;
 		}
 
-		if (numericKeys.has(key) && value.type !== 'number') {
-			addWarning(property, `Expected numeric value for '${property.name}'.`);
-		}
-
-		if (key === 'compressed') {
-			if (value.type === 'string') {
-				const stringValue = readStringValue(value);
-				if (!stringValue) {
-					return;
-				}
-				const normalized = stringValue.toLowerCase();
-				if (!compressedValues.has(normalized)) {
-					addWarning(property, "Unsupported compression. Expected one of: 'zlib', 'zstd', 'xz'.");
-				}
-			} else if (value.type !== 'boolean') {
-				addWarning(property, "Expected string or boolean value for 'compressed'.");
-			}
-		}
-
-		if (key === 'encrypted' && value.type !== 'boolean' && value.type !== 'string') {
-			addWarning(property, "Expected string or boolean value for 'encrypted'.");
-		}
-
-		if (key === 'update-type' && value.type === 'string') {
-			const stringValue = readStringValue(value);
-			if (stringValue !== null && stringValue.trim().length === 0) {
-				addWarning(property, "'update-type' should not be empty.");
-			}
-		}
-
-		if (key === 'sha256' && value.type === 'string') {
-			const stringValue = readStringValue(value);
-			if (
-				stringValue !== null &&
-				!SW_DESCRIPTION_SHA256_REGEX.test(stringValue) &&
-				!SW_DESCRIPTION_SHA256_FUNCTION_REGEX.test(stringValue)
-			) {
-				addWarning(property, "'sha256' should be a 64-character hexadecimal string.");
-			}
-		}
-
-		if (key === 'ivt' && value.type === 'string') {
-			const stringValue = readStringValue(value);
-			if (stringValue !== null && !SW_DESCRIPTION_IVT_REGEX.test(stringValue)) {
-				addWarning(property, "'ivt' should be a 32-character hexadecimal string.");
-			}
-		}
-
-		if (key === 'aes-key' && value.type === 'string') {
-			const stringValue = readStringValue(value);
-			if (stringValue !== null && !SW_DESCRIPTION_AES_KEY_REGEX.test(stringValue)) {
-				addWarning(property, "'aes-key' should be a 32/48/64-character hexadecimal string.");
-			}
-		}
-
-		if (key === 'hardware-compatibility' && value.type !== 'array') {
-			addWarning(property, "Expected array value for 'hardware-compatibility'.");
-		}
-
-		if (key === 'ref' && value.type !== 'string') {
-			addWarning(property, "Expected string value for 'ref'.");
-		}
-
-		if (key === 'hardware-compatibility' && value.type === 'array') {
-			const arrayItems = readArrayChildren(value);
-			for (const item of arrayItems) {
-				if (item.type !== 'string') {
-					addWarning(property, "'hardware-compatibility' array should contain only strings.");
-					break;
-				}
-			}
+		// Run specific validator if one exists for this key
+		const validator = propertyValidators[key];
+		if (validator) {
+			validator({ property, value, addWarning, section });
 		}
 	};
 
-	walkProperties(rootSettings, validateProperty);
+	walkProperties(rootSettings as LibConfigPropertyNode[], validateProperty, undefined);
 	return diagnostics;
 }
 
-function walkProperties(properties: LibConfigPropertyNode[], visitor: (property: LibConfigPropertyNode) => void): void {
+function walkProperties(properties: LibConfigPropertyNode[], visitor: (property: LibConfigPropertyNode, section?: SwDescriptionTypeSection) => void, currentSection?: SwDescriptionTypeSection): void {
 	for (const property of properties) {
-		visitor(property);
-		walkNode(property.value, visitor);
+		const propertyName = property.name.toLowerCase() as SwDescriptionTypeSection;
+		// Check if this property defines a new section
+		const newSection = (['images', 'files', 'partitions', 'scripts'].includes(propertyName)) ? propertyName : currentSection;
+		
+		visitor(property, currentSection);
+		// For property nodes, the value might be in children[0] after LibConfig serialization fix
+		const valueNode = property.value || ((property as any).children?.[0] as BaseLibConfigNode | undefined) || null;
+		walkNode(valueNode, visitor, newSection);
 	}
 }
 
-function walkNode(node: BaseLibConfigNode | null, visitor: (property: LibConfigPropertyNode) => void): void {
+function walkNode(node: BaseLibConfigNode | null, visitor: (property: LibConfigPropertyNode, section?: SwDescriptionTypeSection) => void, currentSection?: SwDescriptionTypeSection): void {
 	if (!node) {
 		return;
 	}
 
 	if (node.type === 'object') {
-		walkProperties((node as ObjectLibConfigNode).children, visitor);
+		walkProperties((node as ObjectLibConfigNode).children, visitor, currentSection);
 		return;
 	}
 
 	if (node.type === 'list') {
 		for (const child of (node as ListLibConfigNode).children) {
-			walkNode(child, visitor);
+			walkNode(child, visitor, currentSection);
 		}
 		return;
 	}
 
 	if (node.type === 'array') {
 		for (const child of (node as ArrayLibConfigNode).children) {
-			walkNode(child, visitor);
+			walkNode(child, visitor, currentSection);
 		}
 	}
 }

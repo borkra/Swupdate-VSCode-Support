@@ -20,7 +20,15 @@ import {
 	formatError
 } from './utils/runner';
 
-import { LibConfigValidation } from './validation/libConfigValidation';
+import {
+	doValidation
+} from './validation/libConfigValidation';
+import {
+	clearParsedDocument,
+	getParsedDocument,
+	setParsedDocument,
+	type ParsedLibconfigPayload
+} from './validation/parseData';
 
 import {
 	getPluginCompletionItems
@@ -30,8 +38,7 @@ import {
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
 const connection = createConnection(ProposedFeatures.all);
-
-connection.console.log('SERVER STARTED');
+const SWUPDATE_PARSED_NOTIFICATION = 'swupdate/libconfigParsed';
 
 // Create a simple text document manager. The text document manager
 // supports full document sync only
@@ -48,6 +55,11 @@ connection.onInitialize(() => {
 	};
 });
 
+connection.onNotification(SWUPDATE_PARSED_NOTIFICATION, (payload: ParsedLibconfigPayload) => {
+	setParsedDocument(payload);
+	validateParsedPayload(payload);
+});
+
 connection.onCompletion((params: CompletionParams) => {
 	const document = documents.get(params.textDocument.uri);
 	if (!document) {
@@ -56,9 +68,27 @@ connection.onCompletion((params: CompletionParams) => {
 
 	const offset = document.offsetAt(params.position);
 	const text = document.getText();
-	const lineStart = text.lastIndexOf('\n', Math.max(0, offset - 1)) + 1;
+	
+	// Optimize line boundary search by avoiding Math.max when not needed
+	const searchStart = offset > 0 ? offset - 1 : 0;
+	const lineStart = text.lastIndexOf('\n', searchStart) + 1;
 	const linePrefix = text.slice(lineStart, offset);
+	
+	// Early return for empty prefix to avoid unnecessary work
 	const trimmedPrefix = linePrefix.trim();
+	if (trimmedPrefix.length === 0 && !linePrefix.includes('=') && !linePrefix.includes(':')) {
+		// For completely empty lines, only basic completions make sense
+		return getPluginCompletionItems({
+			textDocument: document,
+			text,
+			linePrefix,
+			lineStart,
+			trimmedPrefix,
+			base: {
+				includeCompletion
+			}
+		}) || [];
+	}
 
 	const pluginCompletions = getPluginCompletionItems({
 		textDocument: document,
@@ -67,10 +97,7 @@ connection.onCompletion((params: CompletionParams) => {
 		lineStart,
 		trimmedPrefix,
 		base: {
-			includeCompletion,
-			valueCompletions,
-			statementCompletions,
-			completionItems
+			includeCompletion
 		}
 	});
 
@@ -86,6 +113,7 @@ documents.onDidChangeContent((change) => {
 // a document has closed: clear all diagnostics
 documents.onDidClose(event => {
 	cleanPendingValidation(event.document);
+	clearParsedDocument(event.document.uri);
 	connection.sendDiagnostics({ uri: event.document.uri, diagnostics: [] });
 });
 
@@ -98,10 +126,6 @@ const includeCompletion: CompletionItem = {
 	insertTextFormat: InsertTextFormat.Snippet,
 	detail: 'Insert include directive'
 };
-
-const valueCompletions: CompletionItem[] = [];
-const statementCompletions: CompletionItem[] = [];
-const completionItems: CompletionItem[] = [];
 
 function cleanPendingValidation(textDocument: TextDocument): void {
 	const request = pendingValidationRequests[textDocument.uri];
@@ -128,19 +152,29 @@ function validateTextDocument(textDocument: TextDocument): void {
 		return;
 	}
 	const version = textDocument.version;
+	try {
+		const parsedPayload = getParsedDocument(textDocument.uri);
+		if (!parsedPayload || parsedPayload.version !== version) {
+			respond([]);
+			return;
+		}
 
-	const validator = new LibConfigValidation();
-
-	validator.doValidation(textDocument).then(diagnostics => {
-		setTimeout(() => {
-			const currDocument = documents.get(textDocument.uri);
-			if (currDocument && currDocument.version === version) {
-				respond(diagnostics); // Send the computed diagnostics to VSCode.
-			}
-		}, 100);
-	}, error => {
+		const diagnostics = doValidation(textDocument, parsedPayload.parsedDocument);
+		const currDocument = documents.get(textDocument.uri);
+		if (currDocument && currDocument.version === version) {
+			respond(diagnostics);
+		}
+	} catch (error) {
 		connection.console.error(formatError(`Error while validating ${textDocument.uri}`, error));
-	});
+	}
+}
+
+function validateParsedPayload(payload: ParsedLibconfigPayload): void {
+	const document = documents.get(payload.uri)
+		?? TextDocument.create(payload.uri, 'swupdate', payload.version, payload.text);
+
+	const diagnostics = doValidation(document, payload.parsedDocument);
+	connection.sendDiagnostics({ uri: payload.uri, diagnostics });
 }
 
 // Make the text document manager listen on the connection

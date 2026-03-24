@@ -11,7 +11,7 @@ import {
 export const validationPlugins: readonly ValidationPlugin[] = [
 	{
 		name: swDescriptionPlugin.name,
-		supports: context => swDescriptionPlugin.supportsUri(context.textDocument.uri),
+		supports: context => swDescriptionPlugin.supportsDocument(context.textDocument),
 		validate: context => swDescriptionPlugin.validate(context)
 	}
 ];

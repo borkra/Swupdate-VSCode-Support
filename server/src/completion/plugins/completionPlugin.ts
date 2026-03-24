@@ -8,9 +8,6 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 
 export interface CompletionPluginBase {
 	includeCompletion: CompletionItem;
-	valueCompletions: CompletionItem[];
-	statementCompletions: CompletionItem[];
-	completionItems: CompletionItem[];
 }
 
 export interface CompletionPluginContext {

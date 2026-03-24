@@ -13,7 +13,7 @@
 		"vscode": "^1.82.0"
 	},
 	"activationEvents": [
-		"onLanguage:libconfig"
+		"onStartupFinished"
 	],
 	"extensionDependencies": [
 		"borkra.libconfig-lang"
@@ -23,6 +23,26 @@
 	],
 	"main": "./client/out/extension",
 	"contributes": {
+		"languages": [
+			{
+				"id": "swupdate",
+				"aliases": [
+					"SWUpdate",
+					"swupdate"
+				],
+				"filenamePatterns": [
+					"sw-description*"
+				],
+				"configuration": "./language-configuration.json"
+			}
+		],
+		"grammars": [
+			{
+				"language": "swupdate",
+				"scopeName": "source.swupdate",
+				"path": "./syntaxes/swupdate.tmLanguage.json"
+			}
+		],
 		"configuration": {
 			"type": "object",
 			"title": "SWUpdate Configuration",
@@ -50,7 +70,7 @@
 		"watch": "tsc -b -w",
 		"postinstall": "cd client && npm install && cd ../server && npm install && cd ..",
 		"test": "sh ./scripts/e2e.sh",
-		"install:local": "npm run compile && npm run bundle && npx @vscode/vsce package --no-yarn --out swupdate-lang.vsix && code --install-extension swupdate-lang.vsix && code-insiders --install-extension swupdate-lang.vsix"
+		"install:local": "npm run compile && npm run bundle && npx @vscode/vsce package --no-yarn --out swupdate-lang.vsix && code --uninstall-extension borkra.swupdate-lang || true && code --install-extension swupdate-lang.vsix && code-insiders --uninstall-extension borkra.swupdate-lang || true && code-insiders --install-extension swupdate-lang.vsix"
 	},
 	"devDependencies": {
 		"@vscode/test-electron": "^2.5.2",
