@@ -1,8 +1,0 @@
-{
-	"editor.insertSpaces": false,
-	"problems.exclude": {
-		"**/client/testFixture/*invalid*": true
-	},
-	"js/ts.tsc.autoDetect": "off",
-	"js/ts.preferences.quoteStyle": "single"
-}
