@@ -1,11 +1,13 @@
 {
 	"compilerOptions": {
-		"module": "commonjs",
+		"module": "nodenext",
 		"target": "es6",
+		"moduleResolution": "nodenext",
 		"skipLibCheck": true,
 		"outDir": "out",
 		"rootDir": "src",
-		"sourceMap": true
+		"sourceMap": true,
+		"strict": true
 	},
 	"include": ["src"],
 	"exclude": ["node_modules", ".vscode-test"]
