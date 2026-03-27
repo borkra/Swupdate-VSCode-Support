@@ -10,7 +10,6 @@ async function bundle() {
       target: ['node16'],
       external: ['vscode'],
       outfile: 'client/out/extension.js',
-      minify: true,
       sourcemap: false,
       logLevel: 'info'
     }),
@@ -21,7 +20,6 @@ async function bundle() {
       format: 'cjs',
       target: ['node16'],
       outfile: 'server/out/server.js',
-      minify: true,
       sourcemap: false,
       logLevel: 'info'
     })
