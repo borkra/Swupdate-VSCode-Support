@@ -21,12 +21,26 @@ import {
 } from './validation';
 
 import {
-	CompletionPluginContext
-} from '../completion/plugins/completionPlugin';
+	ParsedLibconfigDocument
+} from '../validation/parseData';
 
-import {
-	ValidationPluginContext
-} from '../validation/plugins/validatorPlugin';
+export interface CompletionPluginBase {
+	includeCompletion: CompletionItem;
+}
+
+export interface CompletionPluginContext {
+	textDocument: TextDocument;
+	text: string;
+	linePrefix: string;
+	lineStart: number;
+	trimmedPrefix: string;
+	base: CompletionPluginBase;
+}
+
+export interface ValidationPluginContext {
+	textDocument: TextDocument;
+	parsedDocument: ParsedLibconfigDocument;
+}
 
 export interface SwDescriptionPlugin {
 	name: string;

@@ -31,8 +31,8 @@ import {
 } from './validation/parseData';
 
 import {
-	getPluginCompletionItems
-} from './completion/plugins';
+	swDescriptionPlugin
+} from './swDescription/plugin';
 
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
@@ -74,23 +74,12 @@ connection.onCompletion((params: CompletionParams) => {
 	const lineStart = text.lastIndexOf('\n', searchStart) + 1;
 	const linePrefix = text.slice(lineStart, offset);
 	
-	// Early return for empty prefix to avoid unnecessary work
-	const trimmedPrefix = linePrefix.trim();
-	if (trimmedPrefix.length === 0 && !linePrefix.includes('=') && !linePrefix.includes(':')) {
-		// For completely empty lines, only basic completions make sense
-		return getPluginCompletionItems({
-			textDocument: document,
-			text,
-			linePrefix,
-			lineStart,
-			trimmedPrefix,
-			base: {
-				includeCompletion
-			}
-		}) || [];
+	if (!swDescriptionPlugin.supportsDocument(document)) {
+		return [];
 	}
 
-	const pluginCompletions = getPluginCompletionItems({
+	const trimmedPrefix = linePrefix.trim();
+	return swDescriptionPlugin.complete({
 		textDocument: document,
 		text,
 		linePrefix,
@@ -100,8 +89,6 @@ connection.onCompletion((params: CompletionParams) => {
 			includeCompletion
 		}
 	});
-
-	return pluginCompletions || [];
 });
 
 // The content of a text document has changed. This event is emitted
