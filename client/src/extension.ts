@@ -139,7 +139,6 @@ function registerLibconfigBridge(
 	const syncedVersions = new Map<string, number>();
 	const requestedVersions = new Map<string, number>();
 	const pendingSyncs = new Map<string, NodeJS.Timeout>();
-	const MAX_CACHE_SIZE = 50; // Limit memory usage
 	const SYNC_DEBOUNCE_MS = 150;
 	context.subscriptions.push(syntaxDiagnostics);
 
@@ -153,14 +152,6 @@ function registerLibconfigBridge(
 		if (pending) {
 			clearTimeout(pending);
 			pendingSyncs.delete(documentUri);
-		}
-	};
-
-	// Implement LRU-style cache management to prevent unbounded memory growth
-	const enforceMapSizeLimit = (map: Map<string, number>): void => {
-		if (map.size > MAX_CACHE_SIZE) {
-			const keysToDelete = Array.from(map.keys()).slice(0, map.size - MAX_CACHE_SIZE);
-			keysToDelete.forEach(key => map.delete(key));
 		}
 	};
 
@@ -186,7 +177,6 @@ function registerLibconfigBridge(
 			return;
 		}
 		requestedVersions.set(documentUri, requestedVersion);
-		enforceMapSizeLimit(requestedVersions);
 
 		const api = await libconfigApiPromise;
 		if (!api) {
@@ -201,7 +191,6 @@ function registerLibconfigBridge(
 			}
 			syntaxDiagnostics.set(document.uri, toVsCodeDiagnostics(parsedDocument.syntaxErrors));
 			syncedVersions.set(documentUri, requestedVersion);
-			enforceMapSizeLimit(syncedVersions);
 			
 			const payload: ParsedLibconfigPayload = {
 				uri: documentUri,

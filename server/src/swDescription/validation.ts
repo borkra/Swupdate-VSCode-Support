@@ -91,7 +91,7 @@ const propertyValidators: Record<string, Validator> = {
 			!SW_DESCRIPTION_SHA256_REGEX.test(stringValue) &&
 			!SW_DESCRIPTION_SHA256_FUNCTION_REGEX.test(stringValue)
 		) {
-			ctx.addWarning(ctx.property, "'sha256' should be a 64-character hexadecimal string.");
+			ctx.addWarning(ctx.property, "'sha256' should be a 64-character hexadecimal string or a $swupdate_get_sha256(...) value.");
 		}
 	},
 	'ivt': (ctx) => {

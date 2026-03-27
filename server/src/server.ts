@@ -9,7 +9,6 @@ import {
 	CompletionItem,
 	CompletionItemKind,
 	CompletionParams,
-	Diagnostic,
 	InsertTextFormat,
 	ProposedFeatures,
 	TextDocumentSyncKind
@@ -23,12 +22,12 @@ import {
 	clearParsedDocument,
 	getParsedDocument,
 	setParsedDocument,
+	type ParsedLibconfigDocument,
 	type ParsedLibconfigPayload
 } from './validation/parseData';
 
-import {
-	swDescriptionPlugin
-} from './swDescription/plugin';
+import { isSwDescriptionDocumentUri } from './swDescription/definitions';
+import { getSwDescriptionCompletionItems } from './swDescription/completions';
 
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
@@ -53,7 +52,9 @@ connection.onInitialize(() => {
 
 connection.onNotification(SWUPDATE_PARSED_NOTIFICATION, (payload: ParsedLibconfigPayload) => {
 	setParsedDocument(payload);
-	validateParsedPayload(payload);
+	const document = documents.get(payload.uri)
+		?? TextDocument.create(payload.uri, 'swupdate', payload.version, payload.text);
+	sendValidationDiagnostics(document, payload.parsedDocument);
 });
 
 connection.onCompletion((params: CompletionParams) => {
@@ -70,21 +71,12 @@ connection.onCompletion((params: CompletionParams) => {
 	const lineStart = text.lastIndexOf('\n', searchStart) + 1;
 	const linePrefix = text.slice(lineStart, offset);
 	
-	if (!swDescriptionPlugin.supportsDocument(document)) {
+	if (!(document.languageId === 'swupdate' || isSwDescriptionDocumentUri(document.uri))) {
 		return [];
 	}
 
 	const trimmedPrefix = linePrefix.trim();
-	return swDescriptionPlugin.complete({
-		textDocument: document,
-		text,
-		linePrefix,
-		lineStart,
-		trimmedPrefix,
-		base: {
-			includeCompletion
-		}
-	});
+	return getSwDescriptionCompletionItems(text, linePrefix, lineStart, trimmedPrefix, { includeCompletion });
 });
 
 // The content of a text document has changed. This event is emitted
@@ -100,7 +92,7 @@ documents.onDidClose(event => {
 	connection.sendDiagnostics({ uri: event.document.uri, diagnostics: [] });
 });
 
-const pendingValidationRequests: { [uri: string]: NodeJS.Timeout; } = {};
+const pendingValidationRequests = new Map<string, NodeJS.Timeout>();
 const validationDelayMs = 500;
 const includeCompletion: CompletionItem = {
 	label: '@include',
@@ -111,19 +103,19 @@ const includeCompletion: CompletionItem = {
 };
 
 function cleanPendingValidation(textDocument: TextDocument): void {
-	const request = pendingValidationRequests[textDocument.uri];
+	const request = pendingValidationRequests.get(textDocument.uri);
 	if (request) {
 		clearTimeout(request);
-		delete pendingValidationRequests[textDocument.uri];
+		pendingValidationRequests.delete(textDocument.uri);
 	}
 }
 
 function triggerValidation(textDocument: TextDocument): void {
 	cleanPendingValidation(textDocument);
-	pendingValidationRequests[textDocument.uri] = setTimeout(() => {
-		delete pendingValidationRequests[textDocument.uri];
+	pendingValidationRequests.set(textDocument.uri, setTimeout(() => {
+		pendingValidationRequests.delete(textDocument.uri);
 		validateTextDocument(textDocument);
-	}, validationDelayMs);
+	}, validationDelayMs));
 }
 
 function formatError(message: string, err: unknown): string {
@@ -131,38 +123,29 @@ function formatError(message: string, err: unknown): string {
 	return err != null ? `${message}: ${detail}` : message;
 }
 
+function sendValidationDiagnostics(document: TextDocument, parsedDocument: ParsedLibconfigDocument): void {
+	connection.sendDiagnostics({ uri: document.uri, diagnostics: doValidation(document, parsedDocument) });
+}
+
 function validateTextDocument(textDocument: TextDocument): void {
-	const respond = (diagnostics: Diagnostic[]) => {
-		connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
-	};
 	if (textDocument.getText().length === 0) {
-		respond([]); // ignore empty documents
+		connection.sendDiagnostics({ uri: textDocument.uri, diagnostics: [] });
 		return;
 	}
 	const version = textDocument.version;
 	try {
 		const parsedPayload = getParsedDocument(textDocument.uri);
 		if (!parsedPayload || parsedPayload.version !== version) {
-			respond([]);
+			connection.sendDiagnostics({ uri: textDocument.uri, diagnostics: [] });
 			return;
 		}
-
-		const diagnostics = doValidation(textDocument, parsedPayload.parsedDocument);
 		const currDocument = documents.get(textDocument.uri);
 		if (currDocument && currDocument.version === version) {
-			respond(diagnostics);
+			sendValidationDiagnostics(textDocument, parsedPayload.parsedDocument);
 		}
 	} catch (error) {
 		connection.console.error(formatError(`Error while validating ${textDocument.uri}`, error));
 	}
-}
-
-function validateParsedPayload(payload: ParsedLibconfigPayload): void {
-	const document = documents.get(payload.uri)
-		?? TextDocument.create(payload.uri, 'swupdate', payload.version, payload.text);
-
-	const diagnostics = doValidation(document, payload.parsedDocument);
-	connection.sendDiagnostics({ uri: payload.uri, diagnostics });
 }
 
 // Make the text document manager listen on the connection
