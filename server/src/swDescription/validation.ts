@@ -44,6 +44,9 @@ const TYPE_VALUES_MSG: Readonly<Record<string, string>> = Object.fromEntries(
 	Object.entries(SW_DESCRIPTION_TYPE_VALUES_BY_SECTION).map(([k, v]) => [k, (v as readonly string[]).join(', ')])
 );
 const DISKPART_PARTITION_KEY_REGEX = /^partition-\d+$/i;
+const SW_DESCRIPTION_SECTION_NAMES = new Set<SwDescriptionTypeSection>(
+	Object.keys(SW_DESCRIPTION_TYPE_VALUES_BY_SECTION) as SwDescriptionTypeSection[]
+);
 
 // Validation configuration - maps property keys to their validation logic
 type ValidationContext = {
@@ -274,7 +277,7 @@ function walkProperties(properties: LibConfigPropertyNode[], visitor: (property:
 	for (const property of properties) {
 		const propertyName = property.name.toLowerCase() as SwDescriptionTypeSection;
 		// Check if this property defines a new section
-		const newSection = (['images', 'files', 'partitions', 'scripts'].includes(propertyName)) ? propertyName : currentSection;
+		const newSection = SW_DESCRIPTION_SECTION_NAMES.has(propertyName) ? propertyName : currentSection;
 		
 		visitor(property, currentSection);
 		// For property nodes, the value might be in children[0] after LibConfig serialization fix
