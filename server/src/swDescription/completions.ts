@@ -62,11 +62,7 @@ export type SwDescriptionCompletionBase = {
 	includeCompletion: CompletionItem;
 };
 
-type ValueCompletionContext = {
-	textBeforeLine: string;
-};
-
-type ValueCompletionProvider = (context: ValueCompletionContext) => CompletionItem[];
+type ValueCompletionProvider = (textBeforeLine: string) => CompletionItem[];
 
 const ASSIGNMENT_KEY_REGEX = /([A-Za-z0-9_-]+)\s*[:=][^:=]*$/;
 const TRAILING_STATEMENT_SEPARATOR_REGEX = /[;{}]\s*$/;
@@ -127,22 +123,22 @@ function getSwDescriptionValueCompletionsForContext(
 
 	const provider = valueCompletionsByAssignmentKey[assignmentKey];
 	if (provider) {
-		return provider({ textBeforeLine });
+		return provider(textBeforeLine);
 	}
 
 	return SW_DESCRIPTION_GENERAL_VALUE_ITEMS;
 }
 
-function provideLabeltypeValueCompletions(context: ValueCompletionContext): CompletionItem[] {
-	const parentSection = getCurrentSwDescriptionSection(context.textBeforeLine);
+function provideLabeltypeValueCompletions(textBeforeLine: string): CompletionItem[] {
+	const parentSection = getCurrentSwDescriptionSection(textBeforeLine);
 	if (parentSection !== 'partitions') {
 		return SW_DESCRIPTION_GENERAL_VALUE_ITEMS;
 	}
 	return SW_DESCRIPTION_DISKPART_LABELTYPE_ITEMS;
 }
 
-function provideTypeValueCompletions(context: ValueCompletionContext): CompletionItem[] {
-	const parentSection = getCurrentSwDescriptionSection(context.textBeforeLine);
+function provideTypeValueCompletions(textBeforeLine: string): CompletionItem[] {
+	const parentSection = getCurrentSwDescriptionSection(textBeforeLine);
 	if (!isSwDescriptionTypeSection(parentSection)) {
 		return SW_DESCRIPTION_GENERAL_VALUE_ITEMS;
 	}
