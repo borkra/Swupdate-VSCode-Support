@@ -334,6 +334,7 @@ server/out/
 
 # VS Code local tooling artifacts
 .vscode*
+!.vscodeignore
 
 # TypeScript incremental build info
 *.tsbuildinfo
