@@ -74,6 +74,7 @@
 	"scripts": {
 		"vscode:prepublish": "npm run compile && npm run bundle",
 		"clean": "rm -rf client/out server/out *.vsix client/tsconfig.tsbuildinfo server/tsconfig.tsbuildinfo",
+		"clean:full": "npm run clean && rm -rf node_modules client/node_modules server/node_modules package-lock.json client/package-lock.json server/package-lock.json",
 		"compile": "tsc -b",
 		"bundle": "node scripts/bundle.js",
 		"package:local": "npm run compile && npm run bundle && npx @vscode/vsce package --no-yarn --out swupdate-lang.vsix",
