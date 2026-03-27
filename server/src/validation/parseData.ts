@@ -39,7 +39,13 @@ export function setParsedDocument(payload: ParsedLibconfigPayload): void {
 }
 
 export function getParsedDocument(uri: string): ParsedLibconfigPayload | undefined {
-	return parsedByUri.get(uri);
+	const entry = parsedByUri.get(uri);
+	if (entry) {
+		// Refresh insertion order so eviction removes the least-recently-used entry
+		parsedByUri.delete(uri);
+		parsedByUri.set(uri, entry);
+	}
+	return entry;
 }
 
 export function clearParsedDocument(uri: string): void {

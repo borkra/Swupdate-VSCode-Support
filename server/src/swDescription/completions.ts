@@ -72,6 +72,13 @@ const ASSIGNMENT_KEY_REGEX = /([A-Za-z0-9_-]+)\s*[:=][^:=]*$/;
 const TRAILING_STATEMENT_SEPARATOR_REGEX = /[;{}]\s*$/;
 const SECTION_HEADER_REGEX = /^\s*([A-Za-z0-9_-]+)\s*:\s*\(\s*$/;
 
+const SW_DESCRIPTION_COLON_VALUE_KEY_SET = new Set<string>(SW_DESCRIPTION_COLON_VALUE_KEYS as readonly string[]);
+
+const SW_DESCRIPTION_ALL_ITEMS: CompletionItem[] = [
+	...SW_DESCRIPTION_GENERAL_VALUE_ITEMS,
+	...SW_DESCRIPTION_STATEMENT_ITEMS
+];
+
 // Routes assignment keys to context-specific value completion providers.
 const valueCompletionsByAssignmentKey: Readonly<Record<string, ValueCompletionProvider>> = {
 	compressed: provideCompressedValueCompletions,
@@ -110,10 +117,7 @@ export function getSwDescriptionCompletionItems(
 }
 
 function getSwDescriptionAllCompletions(): CompletionItem[] {
-	return [
-		...getSwDescriptionValueCompletions(),
-		...getSwDescriptionStatementCompletions()
-	];
+	return SW_DESCRIPTION_ALL_ITEMS;
 }
 
 function getSwDescriptionStatementCompletions(): CompletionItem[] {
@@ -175,7 +179,7 @@ function getCurrentAssignmentKey(linePrefix: string): string | null {
 }
 
 function isSwDescriptionColonValueKey(key: string | null): boolean {
-	return key !== null && (SW_DESCRIPTION_COLON_VALUE_KEYS as readonly string[]).includes(key);
+	return key !== null && SW_DESCRIPTION_COLON_VALUE_KEY_SET.has(key);
 }
 
 function getCurrentSwDescriptionSection(textBeforeLine: string): string | null {
