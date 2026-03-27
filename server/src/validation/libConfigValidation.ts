@@ -12,12 +12,9 @@ import {
 } from './parseData';
 
 import {
-        validationPlugins
-} from './plugins';
-
-import {
+	swDescriptionPlugin,
 	ValidationPluginContext
-} from './plugins/validatorPlugin';
+} from '../swDescription/plugin';
 
 export function doValidation(textDocument: TextDocument, parsedDocument: ParsedLibconfigDocument | undefined): Diagnostic[] {
 	if (!parsedDocument) {
@@ -41,12 +38,8 @@ export function doValidation(textDocument: TextDocument, parsedDocument: ParsedL
 		}
 	};
 
-	for (const plugin of validationPlugins) {
-		if (!plugin.supports(pluginContext)) {
-			continue;
-		}
-		const pluginDiagnostics = plugin.validate(pluginContext);
-		for (const p of pluginDiagnostics) {
+	if (swDescriptionPlugin.supportsDocument(textDocument)) {
+		for (const p of swDescriptionPlugin.validate(pluginContext)) {
 			addProblem(p);
 		}
 	}
