@@ -16,10 +16,6 @@ import {
 } from 'vscode-languageserver/node';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
-import { 
-	formatError
-} from './utils/runner';
-
 import {
 	doValidation
 } from './validation/libConfigValidation';
@@ -128,6 +124,18 @@ function triggerValidation(textDocument: TextDocument): void {
 		delete pendingValidationRequests[textDocument.uri];
 		validateTextDocument(textDocument);
 	}, validationDelayMs);
+}
+
+function formatError(message: string, err: any): string {
+	if (err instanceof Error) {
+		let error = <Error>err;
+		return `${message}: ${error.message}\n${error.stack}`;
+	} else if (typeof err === 'string') {
+		return `${message}: ${err}`;
+	} else if (err) {
+		return `${message}: ${err.toString()}`;
+	}
+	return message;
 }
 
 function validateTextDocument(textDocument: TextDocument): void {

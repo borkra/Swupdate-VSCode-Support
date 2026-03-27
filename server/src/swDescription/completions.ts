@@ -81,10 +81,10 @@ const SW_DESCRIPTION_ALL_ITEMS: CompletionItem[] = [
 
 // Routes assignment keys to context-specific value completion providers.
 const valueCompletionsByAssignmentKey: Readonly<Record<string, ValueCompletionProvider>> = {
-	compressed: provideCompressedValueCompletions,
-	encrypted: provideEncryptedValueCompletions,
+	compressed: () => SW_DESCRIPTION_COMPRESSED_ITEMS,
+	encrypted: () => SW_DESCRIPTION_ENCRYPTED_ITEMS,
 	labeltype: provideLabeltypeValueCompletions,
-	'update-type': provideUpdateTypeValueCompletions,
+	'update-type': () => SW_DESCRIPTION_UPDATE_TYPE_ITEMS,
 	type: provideTypeValueCompletions
 };
 
@@ -106,26 +106,14 @@ export function getSwDescriptionCompletionItems(
 
 	const assignmentKey = getCurrentAssignmentKey(linePrefix);
 	if (linePrefix.includes(':') && isSwDescriptionColonValueKey(assignmentKey)) {
-		return getSwDescriptionValueCompletions();
+		return SW_DESCRIPTION_GENERAL_VALUE_ITEMS;
 	}
 
 	if (trimmedPrefix.length === 0 || TRAILING_STATEMENT_SEPARATOR_REGEX.test(linePrefix)) {
-		return getSwDescriptionStatementCompletions();
+		return SW_DESCRIPTION_STATEMENT_ITEMS;
 	}
 
-	return getSwDescriptionAllCompletions();
-}
-
-function getSwDescriptionAllCompletions(): CompletionItem[] {
 	return SW_DESCRIPTION_ALL_ITEMS;
-}
-
-function getSwDescriptionStatementCompletions(): CompletionItem[] {
-	return SW_DESCRIPTION_STATEMENT_ITEMS;
-}
-
-function getSwDescriptionValueCompletions(): CompletionItem[] {
-	return SW_DESCRIPTION_GENERAL_VALUE_ITEMS;
 }
 
 function getSwDescriptionValueCompletionsForContext(
@@ -134,7 +122,7 @@ function getSwDescriptionValueCompletionsForContext(
 ): CompletionItem[] {
 	const assignmentKey = getCurrentAssignmentKey(linePrefix);
 	if (!assignmentKey) {
-		return getSwDescriptionValueCompletions();
+		return SW_DESCRIPTION_GENERAL_VALUE_ITEMS;
 	}
 
 	const provider = valueCompletionsByAssignmentKey[assignmentKey];
@@ -142,33 +130,21 @@ function getSwDescriptionValueCompletionsForContext(
 		return provider({ textBeforeLine });
 	}
 
-	return getSwDescriptionValueCompletions();
-}
-
-function provideCompressedValueCompletions(_context: ValueCompletionContext): CompletionItem[] {
-	return SW_DESCRIPTION_COMPRESSED_ITEMS;
-}
-
-function provideEncryptedValueCompletions(_context: ValueCompletionContext): CompletionItem[] {
-	return SW_DESCRIPTION_ENCRYPTED_ITEMS;
+	return SW_DESCRIPTION_GENERAL_VALUE_ITEMS;
 }
 
 function provideLabeltypeValueCompletions(context: ValueCompletionContext): CompletionItem[] {
 	const parentSection = getCurrentSwDescriptionSection(context.textBeforeLine);
 	if (parentSection !== 'partitions') {
-		return getSwDescriptionValueCompletions();
+		return SW_DESCRIPTION_GENERAL_VALUE_ITEMS;
 	}
 	return SW_DESCRIPTION_DISKPART_LABELTYPE_ITEMS;
-}
-
-function provideUpdateTypeValueCompletions(_context: ValueCompletionContext): CompletionItem[] {
-	return SW_DESCRIPTION_UPDATE_TYPE_ITEMS;
 }
 
 function provideTypeValueCompletions(context: ValueCompletionContext): CompletionItem[] {
 	const parentSection = getCurrentSwDescriptionSection(context.textBeforeLine);
 	if (!isSwDescriptionTypeSection(parentSection)) {
-		return getSwDescriptionValueCompletions();
+		return SW_DESCRIPTION_GENERAL_VALUE_ITEMS;
 	}
 	return SW_DESCRIPTION_TYPE_ITEMS_BY_SECTION[parentSection];
 }
