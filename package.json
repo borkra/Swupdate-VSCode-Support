@@ -4,6 +4,13 @@
 	"description": "SWUpdate sw-description language support with completion and validation",
 	"version": "1.0.0",
 	"icon": "media/icon.png",
+	"license": "MIT",
+	"keywords": [
+		"swupdate",
+		"embedded linux",
+		"firmware update",
+		"OTA"
+	],
 	"publisher": "borkra",
 	"repository": {
 		"type": "git",
