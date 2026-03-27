@@ -10,8 +10,8 @@ import * as os from 'os';
 
 export let doc: vscode.TextDocument;
 export let editor: vscode.TextEditor;
-export let documentEol: string;
-export let platformEol: string;
+
+const tempFixtureDirs = new Set<string>();
 
 /**
  * Activates the vscode.lsp-sample extension
@@ -20,7 +20,7 @@ export async function activate(docUri: vscode.Uri) {
 	await activateExtensions();
 	try {
 		doc = await vscode.workspace.openTextDocument(docUri);
-			doc = await vscode.languages.setTextDocumentLanguage(doc, 'swupdate');
+		doc = await vscode.languages.setTextDocumentLanguage(doc, 'swupdate');
 		editor = await vscode.window.showTextDocument(doc);
 		await sleep(2000); // Wait for server activation
 	} catch (e) {
@@ -33,10 +33,11 @@ export async function activateFixtureDocument(fileName: string): Promise<vscode.
 	try {
 		const content = await fs.readFile(getDocPath(fileName), 'utf8');
 		const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'swupdate-test-'));
+		tempFixtureDirs.add(tempDir);
 		const tempFilePath = path.join(tempDir, fileName);
 		await fs.writeFile(tempFilePath, content, 'utf8');
 		doc = await vscode.workspace.openTextDocument(vscode.Uri.file(tempFilePath));
-			doc = await vscode.languages.setTextDocumentLanguage(doc, 'swupdate');
+		doc = await vscode.languages.setTextDocumentLanguage(doc, 'swupdate');
 		editor = await vscode.window.showTextDocument(doc);
 		await sleep(2000); // Wait for server activation
 		return doc.uri;
@@ -79,6 +80,16 @@ export const getDocPath = (p: string) => {
 export const getDocUri = (p: string) => {
 	return vscode.Uri.file(getDocPath(p));
 };
+
+export async function cleanupTestArtifacts(): Promise<void> {
+	await vscode.commands.executeCommand('workbench.action.closeAllEditors');
+
+	await Promise.all([...tempFixtureDirs].map((tempDir) =>
+		fs.rm(tempDir, { recursive: true, force: true })
+	));
+
+	tempFixtureDirs.clear();
+}
 
 export async function setTestContent(content: string): Promise<boolean> {
 	const all = new vscode.Range(
