@@ -18,4 +18,9 @@ software = {
 			type = "lua";
 		}
 	);
+	partitions: (
+		{
+			type = "diskpart";
+		}
+	);
 };

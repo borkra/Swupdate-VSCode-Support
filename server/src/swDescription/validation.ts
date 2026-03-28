@@ -18,6 +18,7 @@ import {
 	SW_DESCRIPTION_BOOLEAN_KEYS,
 	SW_DESCRIPTION_COMPRESSED_VALUES,
 	SW_DESCRIPTION_DISKPART_LABELTYPE_VALUES,
+	SW_DESCRIPTION_ENTRY_KNOWN_KEYS,
 	SW_DESCRIPTION_EXTERNAL_VARIABLE_REGEX,
 	SW_DESCRIPTION_FILESYSTEM_VALUES,
 	SW_DESCRIPTION_IVT_REGEX,
@@ -241,7 +242,7 @@ export function getSwDescriptionSemanticDiagnostics(
 		addDiagnostic(node, message, DiagnosticSeverity.Error);
 	};
 
-	const validateProperty = (property: LibConfigPropertyNode, section?: SwDescriptionTypeSection) => {
+	const validateProperty = (property: LibConfigPropertyNode, section?: SwDescriptionTypeSection, skipUnknownKeyCheck?: boolean) => {
 		const key = property.name.toLowerCase();
 		// For property nodes, the value is in children[0] after LibConfig serialization fix
 		const value = property.value || ((property as any).children?.[0] as BaseLibConfigNode | undefined) || null;
@@ -267,45 +268,60 @@ export function getSwDescriptionSemanticDiagnostics(
 		}
 
 		validateDiskpartPartitionProperty(property, value, addWarning, addError, section);
+
+		// Unknown key detection: inside a known section, any key not in the spec set is likely a typo.
+		// Skip when inside a handler 'properties' sub-block (those keys are handler-specific).
+		if (
+			section &&
+			!skipUnknownKeyCheck &&
+			!SW_DESCRIPTION_ENTRY_KNOWN_KEYS.has(key) &&
+			!DISKPART_PARTITION_KEY_REGEX.test(property.name)
+		) {
+			addWarning(property, `Unknown property '${property.name}'. Check for typos.`);
+		}
 	};
 
 	walkProperties(rootSettings as LibConfigPropertyNode[], validateProperty, undefined);
 	return diagnostics;
 }
 
-function walkProperties(properties: LibConfigPropertyNode[], visitor: (property: LibConfigPropertyNode, section?: SwDescriptionTypeSection) => void, currentSection?: SwDescriptionTypeSection): void {
+function walkProperties(properties: LibConfigPropertyNode[], visitor: (property: LibConfigPropertyNode, section?: SwDescriptionTypeSection, skipUnknownKeyCheck?: boolean) => void, currentSection?: SwDescriptionTypeSection, skipUnknownKeyCheck?: boolean): void {
 	for (const property of properties) {
 		const propertyName = property.name.toLowerCase() as SwDescriptionTypeSection;
 		// Check if this property defines a new section
 		const newSection = SW_DESCRIPTION_SECTION_NAMES.has(propertyName) ? propertyName : currentSection;
 		
-		visitor(property, currentSection);
+		visitor(property, currentSection, skipUnknownKeyCheck);
 		// For property nodes, the value might be in children[0] after LibConfig serialization fix
 		const valueNode = property.value || ((property as any).children?.[0] as BaseLibConfigNode | undefined) || null;
-		walkNode(valueNode, visitor, newSection);
+		// Children of a 'properties' sub-object are handler-specific — suppress unknown-key check there
+		const rawPropertyName: string = property.name.toLowerCase();
+		const childSkipUnknown = skipUnknownKeyCheck || rawPropertyName === 'properties';
+		walkNode(valueNode, visitor, newSection, childSkipUnknown);
 	}
 }
 
-function walkNode(node: BaseLibConfigNode | null, visitor: (property: LibConfigPropertyNode, section?: SwDescriptionTypeSection) => void, currentSection?: SwDescriptionTypeSection): void {
+function walkNode(node: BaseLibConfigNode | null, visitor: (property: LibConfigPropertyNode, section?: SwDescriptionTypeSection, skipUnknownKeyCheck?: boolean) => void, currentSection?: SwDescriptionTypeSection, skipUnknownKeyCheck?: boolean): void {
 	if (!node) {
 		return;
 	}
 
 	if (node.type === 'object') {
-		walkProperties((node as ObjectLibConfigNode).children, visitor, currentSection);
+		walkProperties((node as ObjectLibConfigNode).children, visitor, currentSection, skipUnknownKeyCheck);
 		return;
 	}
 
 	if (node.type === 'list') {
 		for (const child of (node as ListLibConfigNode).children) {
-			walkNode(child, visitor, currentSection);
+			// Each list item is a fresh entry — reset the properties-block suppression
+			walkNode(child, visitor, currentSection, false);
 		}
 		return;
 	}
 
 	if (node.type === 'array') {
 		for (const child of (node as ArrayLibConfigNode).children) {
-			walkNode(child, visitor, currentSection);
+			walkNode(child, visitor, currentSection, skipUnknownKeyCheck);
 		}
 	}
 }

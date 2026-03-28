@@ -13,6 +13,7 @@ import {
 	SW_DESCRIPTION_COMPRESSED_VALUES,
 	SW_DESCRIPTION_DISKPART_LABELTYPE_VALUES,
 	SW_DESCRIPTION_ENCRYPTED_VALUES,
+	SW_DESCRIPTION_FILESYSTEM_VALUES,
 	SW_DESCRIPTION_GENERAL_LITERAL_VALUES,
 	SW_DESCRIPTION_STATEMENT_TEMPLATES,
 	SW_DESCRIPTION_TYPE_VALUES_BY_SECTION,
@@ -49,6 +50,8 @@ const SW_DESCRIPTION_ENCRYPTED_ITEMS: CompletionItem[] = [
 
 const SW_DESCRIPTION_DISKPART_LABELTYPE_ITEMS = createLiteralValueCompletions(SW_DESCRIPTION_DISKPART_LABELTYPE_VALUES);
 
+const SW_DESCRIPTION_FILESYSTEM_ITEMS = createLiteralValueCompletions(SW_DESCRIPTION_FILESYSTEM_VALUES);
+
 const SW_DESCRIPTION_UPDATE_TYPE_ITEMS = createLiteralValueCompletions(SW_DESCRIPTION_UPDATE_TYPE_VALUES);
 
 const SW_DESCRIPTION_TYPE_ITEMS_BY_SECTION: Readonly<Record<SwDescriptionTypeSection, CompletionItem[]>> = {
@@ -79,6 +82,7 @@ const SW_DESCRIPTION_ALL_ITEMS: CompletionItem[] = [
 const valueCompletionsByAssignmentKey: Readonly<Record<string, ValueCompletionProvider>> = {
 	compressed: () => SW_DESCRIPTION_COMPRESSED_ITEMS,
 	encrypted: () => SW_DESCRIPTION_ENCRYPTED_ITEMS,
+	// Note: 'filesystem' is intentionally absent — it accepts any Linux mount type.
 	labeltype: provideLabeltypeValueCompletions,
 	'update-type': () => SW_DESCRIPTION_UPDATE_TYPE_ITEMS,
 	type: provideTypeValueCompletions

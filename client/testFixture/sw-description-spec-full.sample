@@ -1,0 +1,81 @@
+software = {
+	version = "1.0.0";
+	description = "Full spec coverage example";
+	update-type = "application";
+	hardware-compatibility: [ "1.0", "#RE:^2\\.[0-9]$" ];
+	reboot = false;
+	bootloader_transaction_marker = true;
+	bootloader_state_marker = true;
+	embedded-script = "function hook(image) return true, image end";
+	images: (
+		{
+			filename = "rootfs.ubifs";
+			volume = "rootfs";
+			type = "ubivol";
+			sha256 = "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f";
+			version = "1.0.0";
+			name = "rootfs";
+			install-if-different = true;
+		},
+		{
+			filename = "kernel.bin";
+			device = "mtd7";
+			type = "flash";
+			compressed = "xz";
+			encrypted = "aes-cbc";
+			aes-key = "aabbccddeeff00112233445566778899";
+			ivt = "aabbccddeeff00112233445566778899";
+			installed-directly = false;
+			offset = "16K";
+		},
+		{
+			filename = "app.bin";
+			device = "/dev/mmcblk0p2";
+			type = "raw";
+			install-if-higher = true;
+			version = "2.0.0";
+			name = "app";
+		}
+	);
+	files: (
+		{
+			filename = "config.json";
+			path = "/etc/config.json";
+			type = "rawfile";
+			preserve-attributes = false;
+		}
+	);
+	scripts: (
+		{
+			filename = "post.lua";
+			type = "lua";
+			data = "arg1 arg2";
+		},
+		{
+			filename = "pre.sh";
+			type = "shellscript";
+		}
+	);
+	partitions: (
+		{
+			type = "diskpart";
+			properties: {
+				labeltype = "gpt";
+				partition-1 = ["size=64M", "name=boot"];
+				partition-2 = ["size=1G", "name=rootfs"];
+			};
+		}
+	);
+	bootenv: (
+		{
+			name = "bootpart";
+			value = "0:2";
+		}
+	);
+	vars: (
+		{
+			name = "update_state";
+			value = "ok";
+		}
+	);
+};

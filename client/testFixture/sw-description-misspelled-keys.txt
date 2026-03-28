@@ -1,0 +1,27 @@
+software = {
+	images: (
+		{
+			filname = "kernel.bin";
+			sha56 = "abcdef";
+			compresed = "xz";
+			encripted = "aes-cbc";
+			install-if-diferent = true;
+		}
+	);
+	files: (
+		{
+			filesytem = "ext4";
+			preserv-attributes = true;
+		}
+	);
+	scripts: (
+		{
+			typ = "lua";
+		}
+	);
+	partitions: (
+		{
+			devic = "mtd4";
+		}
+	);
+};

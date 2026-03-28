@@ -1,0 +1,3 @@
+software = {
+	hardware-compatibility = "1.0";
+};

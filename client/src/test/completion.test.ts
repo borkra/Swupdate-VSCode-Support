@@ -18,8 +18,10 @@ type CompletionTestCase = {
 export async function runCompletionTest(): Promise<void> {
 	const docUri = getDocUri('sw-description.sample');
 	const labeltypeDocUri = getDocUri('sw-description-labeltype.sample');
+	const filesystemDocUri = getDocUri('sw-description-filesystem.sample');
 
 	const testCases: CompletionTestCase[] = [
+		// Spec field templates: filename, device, path, volume, filesystem, mtdname, name, value
 		{
 			docUri,
 			position: new vscode.Position(1, 1),
@@ -30,7 +32,15 @@ export async function runCompletionTest(): Promise<void> {
 				{ label: 'embedded-script', kind: vscode.CompletionItemKind.Field },
 				{ label: 'images', kind: vscode.CompletionItemKind.Snippet },
 				{ label: 'bootenv', kind: vscode.CompletionItemKind.Snippet },
-				{ label: 'hardware-compatibility', kind: vscode.CompletionItemKind.Field }
+				{ label: 'hardware-compatibility', kind: vscode.CompletionItemKind.Field },
+				{ label: 'filename', kind: vscode.CompletionItemKind.Field },
+				{ label: 'device', kind: vscode.CompletionItemKind.Field },
+				{ label: 'path', kind: vscode.CompletionItemKind.Field },
+				{ label: 'volume', kind: vscode.CompletionItemKind.Field },
+				{ label: 'filesystem', kind: vscode.CompletionItemKind.Field },
+				{ label: 'mtdname', kind: vscode.CompletionItemKind.Field },
+				{ label: 'name', kind: vscode.CompletionItemKind.Field },
+				{ label: 'value', kind: vscode.CompletionItemKind.Field }
 			]
 		},
 		{
@@ -94,6 +104,28 @@ export async function runCompletionTest(): Promise<void> {
 				{ label: '"ssblswitch"', kind: vscode.CompletionItemKind.Value },
 				{ label: '"ubiswap"', kind: vscode.CompletionItemKind.Value },
 				{ label: '"docker_containerstart"', kind: vscode.CompletionItemKind.Value }
+			]
+		},
+		{
+			docUri,
+			position: new vscode.Position(22, 10),
+			expectedItems: [
+				{ label: '"diskpart"', kind: vscode.CompletionItemKind.Value },
+				{ label: '"diskformat"', kind: vscode.CompletionItemKind.Value },
+				{ label: '"ubipartition"', kind: vscode.CompletionItemKind.Value },
+				{ label: '"toggleboot"', kind: vscode.CompletionItemKind.Value },
+				{ label: '"uniqueuuid"', kind: vscode.CompletionItemKind.Value },
+				{ label: '"btrfs"', kind: vscode.CompletionItemKind.Value }
+			]
+		},
+		// Spec: filesystem value is open-ended (any Linux mount type) — general completions apply,
+		// not a restricted list. Verify the statement template appears as a field completion.
+		{
+			docUri: filesystemDocUri,
+			position: new vscode.Position(3, 16),
+			expectedItems: [
+				{ label: 'filename', kind: vscode.CompletionItemKind.Field },
+				{ label: 'device', kind: vscode.CompletionItemKind.Field }
 			]
 		},
 		{
