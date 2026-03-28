@@ -5,7 +5,7 @@
 A VS Code language extension for `sw-description` files (SWUpdate firmware update descriptors).
 It provides syntax highlighting, semantic validation, and completions via a Language Server Protocol (LSP) server.
 
-The extension depends on `borkra.libconfig-lang` (sibling project at `/devel/Libconfig-VsCode-Support`)
+The extension depends on `borkra.libconfig-lang` (sibling project at `../Libconfig-VsCode-Support`)
 for libconfig grammar and base parsing. That dependency must be installed before the swupdate extension works.
 
 ---
@@ -35,18 +35,19 @@ Swupdate-VSCode-Support/
 
 ---
 
-## NPM Scripts (all run from the workspace root `/devel/Swupdate-VSCode-Support`)
+## NPM Scripts (all run from the workspace root)
 
-| Script | Command | Purpose |
-|---|---|---|
-| `compile` | `npm run compile` | TypeScript build (`tsc -b`) |
-| `watch` | `npm run watch` | Incremental watch mode |
-| `test` | `npm test` | E2E test suite — requires `LIBCONFIG_VSIX_PATH` (see below) |
-| `package:local` | `npm run package:local` | Compile + bundle + produce `swupdate-lang.vsix` |
-| `install:local` | `npm run install:local` | `package:local` then `smart-reinstall.js` (installs into code + code-insiders) |
-| `clean` | `npm run clean` | Remove all build artifacts and `.vsix` |
-| `clean:full` | `npm run clean:full` | `clean` + remove all `node_modules` |
-| `update:version` | `npm run update:version` | Bump version in all package.json files |
+| Script | Command | VS Code Task | Purpose |
+|---|---|---|---|
+| `compile` | `npm run compile` | `compile` | TypeScript build (`tsc -b`) |
+| `watch` | `npm run watch` | `watch` | Incremental watch mode |
+| `test` | `npm test` | `test` | E2E test suite — requires `LIBCONFIG_VSIX_PATH` (see below) |
+| `bundle` | `npm run bundle` | `bundle` | esbuild bundle for client + server |
+| `package:local` | `npm run package:local` | `package:local` | Compile + bundle + produce `swupdate-lang.vsix` |
+| `install:local` | `npm run install:local` | `install:local` | `package:local` then `smart-reinstall.js` (installs into code + code-insiders) |
+| `clean` | `npm run clean` | `clean` | Remove all build artifacts and `.vsix` |
+| `clean:full` | `npm run clean:full` | `clean:full` | `clean` + remove all `node_modules` |
+| `update:version` | `npm run update:version` | `update:version` | Bump version in all package.json files |
 
 ### Running tests
 
@@ -56,20 +57,22 @@ The test runner (`scripts/e2e.js`) installs the libconfig dependency from:
 
 **Local dev workflow:**
 
+Use the VS Code **`test`** task (has `LIBCONFIG_VSIX_PATH` pre-configured), or run manually:
+
 ```bash
 # 1. Build the libconfig sibling vsix (one-time or after libconfig changes)
-cd /devel/Libconfig-VsCode-Support
-npm run compile && npm run bundle && npx @vscode/vsce package --no-yarn --out libconfig-lang.vsix
+# From the Libconfig-VsCode-Support workspace:
+npm run package:local
 
-# 2. Run tests
-cd /devel/Swupdate-VSCode-Support
-LIBCONFIG_VSIX_PATH=/devel/Libconfig-VsCode-Support/libconfig-lang.vsix npm test
+# 2. Run tests (from this workspace):
+LIBCONFIG_VSIX_PATH=../Libconfig-VsCode-Support/libconfig-lang.vsix npm test
 ```
 
 ### Building and installing locally
 
+Use the VS Code **`install:local`** task, or run:
+
 ```bash
-cd /devel/Swupdate-VSCode-Support
 npm run install:local
 # Produces swupdate-lang.vsix and installs into VS Code stable + Insiders
 # Reload the VS Code window after installation to activate the new version
