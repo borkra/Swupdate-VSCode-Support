@@ -20,6 +20,7 @@ software = {
 			offset = "12X";
 			fstype = "ext4hfherkq";
 			aes-key = "0011";
+			ivt = "abcd";
 			sha256 = "abcd";
 		}
 	);

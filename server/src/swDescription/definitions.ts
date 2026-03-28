@@ -38,6 +38,9 @@ export const SW_DESCRIPTION_ENCRYPTED_VALUES = [
 	'aes-cbc'
 ] as const;
 
+// Values for the 'fstype' key — SWUpdate handler-specific filesystem types.
+// Note: 'filesystem' (files section, device mount) accepts any Linux mount-supported
+// type and is NOT validated against this list.
 export const SW_DESCRIPTION_FILESYSTEM_VALUES = [
 	'vfat',
 	'ext2',
@@ -306,8 +309,81 @@ export const SW_DESCRIPTION_STATEMENT_TEMPLATES: readonly SwDescriptionStatement
 		kind: 'field',
 		insertText: 'ref = "${1:#./path}";',
 		detail: 'Reference another node in sw-description'
+	},
+	{
+		label: 'filename',
+		kind: 'field',
+		insertText: 'filename = "${1:image.bin}";',
+		detail: 'Filename as found in the CPIO archive (mandatory for images, files, scripts)'
+	},
+	{
+		label: 'volume',
+		kind: 'field',
+		insertText: 'volume = "${1:rootfs}";',
+		detail: 'UBI volume name where image must be installed (type = "ubivol")'
+	},
+	{
+		label: 'device',
+		kind: 'field',
+		insertText: 'device = "${1:/dev/mmcblk0p1}";',
+		detail: 'Target device node (absolute path or name in /dev)'
+	},
+	{
+		label: 'path',
+		kind: 'field',
+		insertText: 'path = "${1:/etc/config}";',
+		detail: 'Destination path in filesystem (mandatory for files section)'
+	},
+	{
+		label: 'filesystem',
+		kind: 'field',
+		insertText: 'filesystem = "${1:ext4}";',
+		detail: 'Filesystem type used to mount device before copying file'
+	},
+	{
+		label: 'mtdname',
+		kind: 'field',
+		insertText: 'mtdname = "${1:kernel}";',
+		detail: 'MTD device name for the flash handler (alternative to device)'
+	},
+	{
+		label: 'name',
+		kind: 'field',
+		insertText: 'name = "${1:component}";',
+		detail: 'Name of the sw-component matched against /etc/sw-versions'
+	},
+	{
+		label: 'value',
+		kind: 'field',
+		insertText: 'value = "${1:val}";',
+		detail: 'Value to assign to a bootenv variable or persistent variable'
 	}
 ] as const;
+
+/**
+ * All spec-defined property keys that may appear at the entry level inside
+ * images / files / scripts / partitions list items. Anything outside this set
+ * (and not matching partition-\d+) is a candidate typo.
+ */
+export const SW_DESCRIPTION_ENTRY_KNOWN_KEYS = new Set<string>([
+	// Identification / versioning
+	'filename', 'name', 'version', 'description',
+	// Target location
+	'volume', 'ubipartition', 'device', 'mtdname', 'path', 'filesystem', 'fstype',
+	// Install behaviour
+	'type', 'compressed', 'encrypted', 'installed-directly', 'offset', 'size',
+	'install-if-different', 'install-if-higher',
+	// Integrity
+	'sha256', 'aes-key', 'ivt',
+	// Files handler
+	'preserve-attributes',
+	// Scripting
+	'data', 'hook', 'ref', 'embedded-script',
+	// Handler-properties sub-block (contents are handler-specific, not checked)
+	'properties',
+	// bootenv / vars sections
+	'value'
+]);
 
 export const SW_DESCRIPTION_SHA256_REGEX = /^[0-9a-fA-F]{64}$/;
 export const SW_DESCRIPTION_SHA256_FUNCTION_REGEX = /^\$swupdate_get_sha256\([^\)]+\)$/;

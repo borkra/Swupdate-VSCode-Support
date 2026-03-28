@@ -1,0 +1,22 @@
+software = {
+	update-type = "";
+	reboot = "yes";
+	hardware-compatibility: [1, 2];
+	images: (
+		{
+			type = 1;
+			compressed = 5;
+			ref = true;
+		}
+	);
+	partitions: (
+		{
+			type = "diskpart";
+			size = true;
+			properties: {
+				labeltype = 5;
+				partition-1 = "size=64M";
+			};
+		}
+	);
+};

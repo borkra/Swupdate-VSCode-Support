@@ -7,6 +7,7 @@
 	"license": "MIT",
 	"keywords": [
 		"swupdate",
+		"sw-description",
 		"embedded linux",
 		"firmware update",
 		"OTA"
