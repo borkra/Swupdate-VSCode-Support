@@ -8,6 +8,9 @@ server/out/
 # VS Code local tooling artifacts
 .vscode*
 !.vscodeignore
+!.vscode/
+.vscode/*
+!.vscode/tasks.json
 
 # TypeScript incremental build info
 *.tsbuildinfo
