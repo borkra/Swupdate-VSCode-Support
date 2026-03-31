@@ -71,8 +71,7 @@ jobs:
         id: release
         run: |
           version="${{ steps.resolve-version.outputs.version }}"
-          npm version "$version" --no-git-tag-version
-          npm run update:version
+          npm run update:version -- "$version"
           git add -A
           git commit -m "chore(release): v$version"
           git tag "v$version"
