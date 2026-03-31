@@ -76,7 +76,8 @@ jobs:
           git add -A
           git commit -m "chore(release): v$version"
           git tag "v$version"
-          git push origin HEAD:main --follow-tags
+          git push origin HEAD:main
+          git push origin "v$version"
           echo "release_tag=v$version" >> "$GITHUB_OUTPUT"
 
   publish-vsix:
