@@ -73,7 +73,7 @@ jobs:
           version="${{ steps.resolve-version.outputs.version }}"
           npm version "$version" --no-git-tag-version
           npm run update:version
-          git add package.json package-lock.json client/package.json client/package-lock.json server/package.json server/package-lock.json
+          git add -A
           git commit -m "chore(release): v$version"
           git tag "v$version"
           git push origin HEAD:main --follow-tags
