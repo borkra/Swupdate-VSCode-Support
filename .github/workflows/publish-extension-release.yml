@@ -73,7 +73,7 @@ jobs:
           version="${{ steps.resolve-version.outputs.version }}"
           npm run update:version -- "$version"
           git add -A
-          git commit -m "chore(release): v$version"
+          git diff --staged --quiet || git commit -m "chore(release): v$version"
           git tag "v$version"
           git push origin HEAD:main
           git push origin "v$version"
