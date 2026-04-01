@@ -1,7 +1,7 @@
 # Change Log
 
 ## Unreleased
-- No changes yet.
+- Updated documentation per VSCode marketplace requirements
 
 ## 1.0.0
 - Initial release.
