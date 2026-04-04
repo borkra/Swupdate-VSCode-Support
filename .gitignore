@@ -18,7 +18,4 @@ server/out/
 # Packaged extension
 *.vsix
 
-# Lock files
-package-lock.json
-client/package-lock.json
-server/package-lock.json
+
