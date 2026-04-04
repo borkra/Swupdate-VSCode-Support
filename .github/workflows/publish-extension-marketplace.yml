@@ -42,22 +42,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: gh release view "${{ steps.tag.outputs.release_tag }}" --repo "${{ github.repository }}"
 
-      - name: Checkout
-        uses: actions/checkout@v6
+      - name: Set up, install and build
+        uses: ./.github/actions/build
         with:
           ref: ${{ !inputs.dry_run && (github.event_name == 'workflow_dispatch' && steps.tag.outputs.release_tag || github.ref_name) || '' }}
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: 20
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Build extension
-        run: npm run compile && npm run bundle
 
       - name: Validate marketplace token
         if: ${{ !inputs.dry_run }}
