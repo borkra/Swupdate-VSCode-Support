@@ -27,6 +27,7 @@ import {
 	SW_DESCRIPTION_SHA256_REGEX,
 	SW_DESCRIPTION_SIZE_REGEX,
 	SW_DESCRIPTION_STRING_KEYS,
+	SW_DESCRIPTION_STRTOBOOL_VALUES,
 	SW_DESCRIPTION_TYPE_VALUES_BY_SECTION,
 	SW_DESCRIPTION_TYPE_VALUE_SETS_BY_SECTION
 } from './definitions';
@@ -37,6 +38,10 @@ const stringKeys = new Set<string>(SW_DESCRIPTION_STRING_KEYS as readonly string
 const compressedValues = new Set<string>(SW_DESCRIPTION_COMPRESSED_VALUES as readonly string[]);
 const diskpartLabeltypeValues = new Set<string>(SW_DESCRIPTION_DISKPART_LABELTYPE_VALUES as readonly string[]);
 const filesystemValues = new Set<string>(SW_DESCRIPTION_FILESYSTEM_VALUES as readonly string[]);
+const strtoboolValues = new Set<string>(SW_DESCRIPTION_STRTOBOOL_VALUES as readonly string[]);
+const STRTOBOOL_VALUES_MSG = SW_DESCRIPTION_STRTOBOOL_VALUES.map(v => `"${v}"`).join(', ');
+// Matches any case-variant of "true"/"false" — used to detect boolean-ish strings inside properties blocks.
+const BOOLEAN_LIKE_REGEX = /^(true|false)$/i;
 
 // Pre-computed error message strings
 const DISKPART_LABELTYPE_VALUES_MSG = SW_DESCRIPTION_DISKPART_LABELTYPE_VALUES.join(', ');
@@ -254,6 +259,20 @@ export function getSwDescriptionSemanticDiagnostics(
 		if (booleanKeys.has(key) && value.type !== 'boolean') {
 			addWarning(property, `Expected boolean value for '${property.name}'.`);
 			return;
+		}
+
+		// Inside handler 'properties' blocks: values intended as booleans must use strtobool strings.
+		// Native libconfig booleans are not parsed by the handler API — it uses strtobool().
+		if (skipUnknownKeyCheck) {
+			if (value.type === 'boolean') {
+				addWarning(property, `Use a strtobool string for '${property.name}': expected one of ${STRTOBOOL_VALUES_MSG}.`);
+			} else if (value.type === 'string') {
+				const sv = readStringValue(value);
+				if (sv !== null && BOOLEAN_LIKE_REGEX.test(sv) && !strtoboolValues.has(sv)) {
+					addWarning(property, `'${property.name}' is not a valid strtobool string. Expected one of: ${STRTOBOOL_VALUES_MSG}.`);
+				}
+			}
+			// Continue — still run named validators (e.g. labeltype, partition-N) inside properties blocks.
 		}
 
 		if (stringKeys.has(key) && value.type !== 'string') {

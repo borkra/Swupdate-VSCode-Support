@@ -95,7 +95,10 @@ export async function runDiagnosticsTest(): Promise<void> {
         { message: "Unknown property 'aes-key'", present: false },
         { message: "Unknown property 'ivt'", present: false },
         { message: "Unknown property 'type'", present: false },
-        { message: "Unknown property 'properties'", present: false }
+        { message: "Unknown property 'properties'", present: false },
+        // No strtobool warnings for valid strtobool strings in properties blocks
+        { message: "Use a strtobool string for 'force'", present: false },
+        { message: "'force' is not a valid strtobool string", present: false }
       ]
     },
     // Spec: misspelled property keys must be reported in all section types
@@ -137,6 +140,10 @@ export async function runDiagnosticsTest(): Promise<void> {
         { message: "Invalid partition 'size' value. Expected number or string.", severity: vscode.DiagnosticSeverity.Error },
         // labeltype assigned a number (not a string)
         { message: "Expected string value for 'labeltype'", severity: vscode.DiagnosticSeverity.Error },
+        // native libconfig boolean inside properties block — must use strtobool string
+        { message: "Use a strtobool string for 'atomic-install'", severity: vscode.DiagnosticSeverity.Warning },
+        // boolean-ish string with wrong case inside properties block
+        { message: "'force' is not a valid strtobool string", severity: vscode.DiagnosticSeverity.Warning },
         // diskpart partition-N assigned a string instead of an array
         { message: "Expected array value for 'partition-1'", severity: vscode.DiagnosticSeverity.Warning }
       ]

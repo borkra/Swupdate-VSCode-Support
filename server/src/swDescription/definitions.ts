@@ -59,6 +59,47 @@ export const SW_DESCRIPTION_UPDATE_TYPE_VALUES = [
 	'OS'
 ] as const;
 
+/**
+ * Accepted string values for properties parsed via strtobool() in SWUpdate.
+ * Only exactly these four strings are recognised; mixed-case (e.g. "True") is not.
+ */
+export const SW_DESCRIPTION_STRTOBOOL_VALUES = [
+	'true',
+	'TRUE',
+	'false',
+	'FALSE'
+] as const;
+
+/**
+ * All known handler property keys (inside `properties = { ... }` blocks) that are
+ * parsed via strtobool() in SWUpdate handlers. Values must be one of
+ * SW_DESCRIPTION_STRTOBOOL_VALUES — native libconfig booleans are not accepted.
+ *
+ * Sources:
+ *   atomic-install, create-destination  — raw_handler.c
+ *   create-destination                  — archive_handler.c, btrfs_handler.c,
+ *                                         rdiff_handler.c, copy_handler.c
+ *   mount                               — btrfs_handler.c
+ *   nolock, noinuse                     — diskpart_handler.c
+ *   oob, noecc                          — flash_handler.c
+ *   force                               — diskformat_handler.c
+ *   always-remove, auto-resize          — ubivol_handler.c
+ *   recursive                           — copy_handler.c
+ */
+export const SW_DESCRIPTION_STRTOBOOL_KEYS = [
+	'atomic-install',
+	'create-destination',
+	'mount',
+	'nolock',
+	'noinuse',
+	'oob',
+	'noecc',
+	'force',
+	'always-remove',
+	'auto-resize',
+	'recursive'
+] as const;
+
 export const SW_DESCRIPTION_IMAGE_TYPE_VALUES = [
 	'ubivol',
 	'flash',

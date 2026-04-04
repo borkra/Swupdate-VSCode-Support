@@ -16,6 +16,8 @@ import {
 	SW_DESCRIPTION_FILESYSTEM_VALUES,
 	SW_DESCRIPTION_GENERAL_LITERAL_VALUES,
 	SW_DESCRIPTION_STATEMENT_TEMPLATES,
+	SW_DESCRIPTION_STRTOBOOL_KEYS,
+	SW_DESCRIPTION_STRTOBOOL_VALUES,
 	SW_DESCRIPTION_TYPE_VALUES_BY_SECTION,
 	SW_DESCRIPTION_UPDATE_TYPE_VALUES
 } from './definitions';
@@ -54,6 +56,8 @@ const SW_DESCRIPTION_FILESYSTEM_ITEMS = createLiteralValueCompletions(SW_DESCRIP
 
 const SW_DESCRIPTION_UPDATE_TYPE_ITEMS = createLiteralValueCompletions(SW_DESCRIPTION_UPDATE_TYPE_VALUES);
 
+const SW_DESCRIPTION_STRTOBOOL_ITEMS = createLiteralValueCompletions(SW_DESCRIPTION_STRTOBOOL_VALUES);
+
 const SW_DESCRIPTION_TYPE_ITEMS_BY_SECTION: Readonly<Record<SwDescriptionTypeSection, CompletionItem[]>> = {
 	images: createLiteralValueCompletions(SW_DESCRIPTION_TYPE_VALUES_BY_SECTION.images),
 	files: createLiteralValueCompletions(SW_DESCRIPTION_TYPE_VALUES_BY_SECTION.files),
@@ -85,7 +89,11 @@ const valueCompletionsByAssignmentKey: Readonly<Record<string, ValueCompletionPr
 	// Note: 'filesystem' is intentionally absent — it accepts any Linux mount type.
 	labeltype: provideLabeltypeValueCompletions,
 	'update-type': () => SW_DESCRIPTION_UPDATE_TYPE_ITEMS,
-	type: provideTypeValueCompletions
+	type: provideTypeValueCompletions,
+	// Handler properties-block keys parsed via strtobool() — must use "true"/"TRUE"/"false"/"FALSE"
+	...Object.fromEntries(
+		SW_DESCRIPTION_STRTOBOOL_KEYS.map(key => [key, () => SW_DESCRIPTION_STRTOBOOL_ITEMS])
+	)
 };
 
 export function getSwDescriptionCompletionItems(

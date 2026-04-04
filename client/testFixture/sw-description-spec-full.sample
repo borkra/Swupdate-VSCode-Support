@@ -16,6 +16,9 @@ software = {
 			version = "1.0.0";
 			name = "rootfs";
 			install-if-different = true;
+			properties: {
+				force = "TRUE";
+			};
 		},
 		{
 			filename = "kernel.bin";

@@ -16,6 +16,8 @@ software = {
 			properties: {
 				labeltype = 5;
 				partition-1 = "size=64M";
+				atomic-install = true;
+				force = "True";
 			};
 		}
 	);
