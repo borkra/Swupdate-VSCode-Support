@@ -19,16 +19,24 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Normalize release tag
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        id: tag
+        run: |
+          raw="${{ inputs.release_tag }}"
+          tag="${raw#v}"
+          echo "release_tag=v$tag" >> "$GITHUB_OUTPUT"
+
       - name: Validate release tag exists
         if: ${{ github.event_name == 'workflow_dispatch' }}
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release view "${{ inputs.release_tag }}" --repo "${{ github.repository }}"
+        run: gh release view "${{ steps.tag.outputs.release_tag }}" --repo "${{ github.repository }}"
 
       - name: Checkout
         uses: actions/checkout@v6
         with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.ref_name }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && steps.tag.outputs.release_tag || github.ref_name }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v5
