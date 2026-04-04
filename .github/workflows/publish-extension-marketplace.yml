@@ -4,9 +4,14 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: Existing GitHub release tag to publish (for example, v1.0.0)
-        required: true
+        description: Existing GitHub release tag to publish (for example, v1.0.0) — leave empty when dry_run is true
+        required: false
         type: string
+      dry_run:
+        description: Dry run — build only, skip publishing (checks out latest commit)
+        required: false
+        type: boolean
+        default: false
   push:
     tags:
       - "v*"
@@ -20,15 +25,19 @@ jobs:
 
     steps:
       - name: Normalize release tag
-        if: ${{ github.event_name == 'workflow_dispatch' }}
+        if: ${{ github.event_name == 'workflow_dispatch' && !inputs.dry_run }}
         id: tag
         run: |
+          if [ -z "${{ inputs.release_tag }}" ]; then
+            echo "release_tag is required when dry_run is false."
+            exit 1
+          fi
           raw="${{ inputs.release_tag }}"
           tag="${raw#v}"
           echo "release_tag=v$tag" >> "$GITHUB_OUTPUT"
 
       - name: Validate release tag exists
-        if: ${{ github.event_name == 'workflow_dispatch' }}
+        if: ${{ github.event_name == 'workflow_dispatch' && !inputs.dry_run }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh release view "${{ steps.tag.outputs.release_tag }}" --repo "${{ github.repository }}"
@@ -36,7 +45,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && steps.tag.outputs.release_tag || github.ref_name }}
+          ref: ${{ !inputs.dry_run && (github.event_name == 'workflow_dispatch' && steps.tag.outputs.release_tag || github.ref_name) || '' }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v6
@@ -51,6 +60,7 @@ jobs:
         run: npm run compile && npm run bundle
 
       - name: Validate marketplace token
+        if: ${{ !inputs.dry_run }}
         run: |
           if [ -z "${{ secrets['VSCE_PAT'] }}" ]; then
             echo "Missing marketplace token. Set repository secret VSCE_PAT."
@@ -58,12 +68,13 @@ jobs:
           fi
 
       - name: Publish to VS Code Marketplace
+        if: ${{ !inputs.dry_run }}
         run: npx @vscode/vsce publish --no-yarn
         env:
           VSCE_PAT: ${{ secrets['VSCE_PAT'] }}
 
       - name: Publish to Open VSX Registry
-        if: ${{ env.OVSX_PAT != '' }}
+        if: ${{ !inputs.dry_run && env.OVSX_PAT != '' }}
         run: npx ovsx publish
         env:
           OVSX_PAT: ${{ secrets['OVSX_PAT'] }}
