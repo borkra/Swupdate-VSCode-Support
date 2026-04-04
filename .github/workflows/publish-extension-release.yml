@@ -1,5 +1,7 @@
 name: Publish Extension Release
 
+run-name: "Publish Release — v${{ inputs.version }}"
+
 on:
   workflow_dispatch:
     inputs:
@@ -7,95 +9,36 @@ on:
         description: Release version (for example, 1.0.0)
         required: true
         type: string
-  pull_request_target:
-    types:
-      - labeled
 
 permissions:
   contents: write
 
 jobs:
-  prepare-release:
-    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request_target' && (startsWith(github.event.label.name, 'release:') || startsWith(github.event.label.name, 'v'))) }}
+  publish-release:
     runs-on: ubuntu-latest
-    outputs:
-      release_tag: ${{ steps.release.outputs.release_tag }}
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-        with:
-          ref: main
-          fetch-depth: 0
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: 20
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Configure git user
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-      - name: Resolve version from trigger
+      - name: Validate version
         id: resolve-version
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            version="${{ inputs.version }}"
-          else
-            label="${{ github.event.label.name }}"
-            case "$label" in
-              release:v*) version="${label#release:v}" ;;
-              release:*) version="${label#release:}" ;;
-              v*) version="${label#v}" ;;
-              *)
-                echo "Label '$label' does not encode a release version."
-                echo "Use label format 'release:vX.Y.Z' (for example, release:v1.0.0)."
-                exit 1
-                ;;
-            esac
-          fi
-
+          version="${{ inputs.version }}"
           if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
             echo "Invalid version: $version"
             exit 1
           fi
-
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
-      - name: Create release commit and tag
-        id: release
-        run: |
-          version="${{ steps.resolve-version.outputs.version }}"
-          npm run update:version -- "$version"
-          git add -A
-          git diff --staged --quiet || git commit -m "chore(release): v$version"
-          git tag "v$version"
-          git push origin HEAD:main
-          git push origin "v$version"
-          echo "release_tag=v$version" >> "$GITHUB_OUTPUT"
-
-  publish-vsix:
-    needs: [prepare-release]
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Set up, install and build
+      - name: Checkout, bump version and build
+        id: build
         uses: ./.github/actions/build
         with:
-          ref: ${{ needs.prepare-release.outputs.release_tag }}
-
-      - name: Package VSIX
-        run: npx @vscode/vsce package --no-yarn --out swupdate-lang.vsix
+          version: ${{ steps.resolve-version.outputs.version }}
 
       - name: Publish GitHub release with VSIX
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ needs.prepare-release.outputs.release_tag }}
-          files: swupdate-lang.vsix
-          generate_release_notes: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v${{ steps.resolve-version.outputs.version }}" \
+            swupdate-lang.vsix \
+            --target "${{ steps.build.outputs.commit_sha }}" \
+            --generate-notes

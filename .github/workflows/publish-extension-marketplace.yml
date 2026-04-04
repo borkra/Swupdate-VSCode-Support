@@ -1,20 +1,14 @@
 name: Publish VS Code Marketplace Extension
 
+run-name: "Publish to Marketplace — ${{ inputs.release_tag }}"
+
 on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: Existing GitHub release tag to publish (for example, v1.0.0) — leave empty when dry_run is true
-        required: false
+        description: GitHub release tag to publish (for example, v1.0.0)
+        required: true
         type: string
-      dry_run:
-        description: Dry run — build only, skip publishing (checks out latest commit)
-        required: false
-        type: boolean
-        default: false
-  push:
-    tags:
-      - "v*"
 
 permissions:
   contents: read
@@ -24,31 +18,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Normalize release tag
-        if: ${{ github.event_name == 'workflow_dispatch' && !inputs.dry_run }}
+      - name: Resolve release tag
         id: tag
         run: |
-          if [ -z "${{ inputs.release_tag }}" ]; then
-            echo "release_tag is required when dry_run is false."
-            exit 1
-          fi
           raw="${{ inputs.release_tag }}"
           tag="${raw#v}"
           echo "release_tag=v$tag" >> "$GITHUB_OUTPUT"
 
-      - name: Validate release tag exists
-        if: ${{ github.event_name == 'workflow_dispatch' && !inputs.dry_run }}
+      - name: Download VSIX from release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release view "${{ steps.tag.outputs.release_tag }}" --repo "${{ github.repository }}"
-
-      - name: Set up, install and build
-        uses: ./.github/actions/build
-        with:
-          ref: ${{ !inputs.dry_run && (github.event_name == 'workflow_dispatch' && steps.tag.outputs.release_tag || github.ref_name) || '' }}
+        run: gh release download "${{ steps.tag.outputs.release_tag }}" --repo "${{ github.repository }}" --pattern "*.vsix"
 
       - name: Validate marketplace token
-        if: ${{ !inputs.dry_run }}
         run: |
           if [ -z "${{ secrets['VSCE_PAT'] }}" ]; then
             echo "Missing marketplace token. Set repository secret VSCE_PAT."
@@ -56,13 +38,12 @@ jobs:
           fi
 
       - name: Publish to VS Code Marketplace
-        if: ${{ !inputs.dry_run }}
-        run: npx @vscode/vsce publish --no-yarn
+        run: npx @vscode/vsce publish --no-yarn swupdate-lang.vsix
         env:
           VSCE_PAT: ${{ secrets['VSCE_PAT'] }}
 
       - name: Publish to Open VSX Registry
-        if: ${{ !inputs.dry_run && env.OVSX_PAT != '' }}
-        run: npx ovsx publish
+        if: ${{ env.OVSX_PAT != '' }}
+        run: npx ovsx publish swupdate-lang.vsix
         env:
           OVSX_PAT: ${{ secrets['OVSX_PAT'] }}

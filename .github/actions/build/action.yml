@@ -6,6 +6,15 @@ inputs:
     description: Git ref to checkout (tag, branch, SHA). Leave empty for default HEAD.
     required: false
     default: ''
+  version:
+    description: If set, bumps version files, commits, and pushes before building. Outputs commit_sha.
+    required: false
+    default: ''
+
+outputs:
+  commit_sha:
+    description: SHA of the HEAD commit after checkout (and optional version bump).
+    value: ${{ steps.sha.outputs.commit_sha }}
 
 runs:
   using: composite
@@ -15,6 +24,27 @@ runs:
       uses: actions/checkout@v6
       with:
         ref: ${{ inputs.ref }}
+
+    - name: Configure git user
+      if: ${{ inputs.version != '' }}
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      shell: bash
+
+    - name: Bump version and push commit
+      if: ${{ inputs.version != '' }}
+      run: |
+        node scripts/update-version.js "${{ inputs.version }}"
+        git add -A
+        git diff --staged --quiet || git commit -m "chore(release): v${{ inputs.version }}"
+        git push origin HEAD
+      shell: bash
+
+    - name: Record commit SHA
+      id: sha
+      run: echo "commit_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      shell: bash
 
     - name: Set up Node.js
       uses: actions/setup-node@v6
@@ -28,4 +58,8 @@ runs:
 
     - name: Build extension
       run: npm run compile && npm run bundle
+      shell: bash
+
+    - name: Package VSIX
+      run: npx @vscode/vsce package --no-yarn --out swupdate-lang.vsix
       shell: bash

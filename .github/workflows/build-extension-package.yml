@@ -5,45 +5,15 @@ on:
   push:
     branches:
       - main
-    paths:
-      - README.md
-      - CHANGELOG.md
-      - package.json
-      - package-lock.json
-      - tsconfig.json
-      - tslint.json
-      - language-configuration.json
-      - .vscodeignore
-      - scripts/**
-      - syntaxes/**
-      - media/**
-      - client/package.json
-      - client/tsconfig.json
-      - client/src/**
-      - server/package.json
-      - server/tsconfig.json
-      - server/src/**
+    paths-ignore:
+      - '.github/**'
+      - 'docs/**'
   pull_request:
     branches:
       - main
-    paths:
-      - README.md
-      - CHANGELOG.md
-      - package.json
-      - package-lock.json
-      - tsconfig.json
-      - tslint.json
-      - language-configuration.json
-      - .vscodeignore
-      - scripts/**
-      - syntaxes/**
-      - media/**
-      - client/package.json
-      - client/tsconfig.json
-      - client/src/**
-      - server/package.json
-      - server/tsconfig.json
-      - server/src/**
+    paths-ignore:
+      - '.github/**'
+      - 'docs/**'
 
 jobs:
   build-vsix:
@@ -52,9 +22,6 @@ jobs:
     steps:
       - name: Set up, install and build
         uses: ./.github/actions/build
-
-      - name: Package VSIX
-        run: npx @vscode/vsce package --no-yarn --out swupdate-lang.vsix
 
       - name: Upload VSIX artifact
         uses: actions/upload-artifact@v7
