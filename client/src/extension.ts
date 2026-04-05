@@ -123,7 +123,7 @@ export async function activate(context: ExtensionContext) {
 	// Start the client. This will also launch the server.
 	try {
 		await client.start();
-		const libconfigApiPromise = resolveLibconfigApi();
+		const libconfigApiPromise = resolveLibconfigApi(context);
 		registerLibconfigBridge(context, libconfigApiPromise);
 		registerLibconfigCompletionBridge(context, libconfigApiPromise);
 	} catch (err) {
@@ -304,10 +304,11 @@ function registerLibconfigCompletionBridge(
 	context.subscriptions.push(completionProvider);
 }
 
-async function resolveLibconfigApi(): Promise<LibconfigExtensionApi | undefined> {
-	const extension = vscode.extensions.getExtension<LibconfigExtensionApi>('borkra.libconfig-lang');
+async function resolveLibconfigApi(context: ExtensionContext): Promise<LibconfigExtensionApi | undefined> {
+	const libconfigId: string = context.extension.packageJSON?.extensionDependencies?.[0];
+	const extension = vscode.extensions.getExtension<LibconfigExtensionApi>(libconfigId);
 	if (!extension) {
-		vscode.window.showErrorMessage('SWUpdate requires LibConfig extension borkra.libconfig-lang.');
+		vscode.window.showErrorMessage(`SWUpdate requires LibConfig extension ${libconfigId}.`);
 		return undefined;
 	}
 

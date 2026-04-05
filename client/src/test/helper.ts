@@ -62,10 +62,12 @@ async function activateExtensions() {
 	}
 	await swupdateExt.activate();
 
-	const ext = vscode.extensions.getExtension('borkra.libconfig-lang');
+	const { extensionDependencies } = require('../../package.json');
+	const libconfigId: string = extensionDependencies[0];
+	const ext = vscode.extensions.getExtension(libconfigId);
 
 	if (!ext) {
-		throw new Error('LibConfig extension borkra.libconfig-lang is not installed for tests.');
+		throw new Error(`LibConfig extension ${libconfigId} is not installed for tests.`);
 	}
 	await ext.activate();
 }

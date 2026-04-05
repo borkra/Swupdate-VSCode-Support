@@ -24,7 +24,7 @@
 		"onStartupFinished"
 	],
 	"extensionDependencies": [
-		"borkra.libconfig-lang"
+		"borkra.libconfig-borkra"
 	],
 	"categories": [
 		"Programming Languages"
