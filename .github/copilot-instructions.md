@@ -1,5 +1,9 @@
 # SWUpdate VS Code Extension — Copilot Instructions
 
+## Agent Rules
+
+- **Never commit or push anything without explicit user approval.** Always show the diff or summarise changes and wait for the user to say "commit" or "push" before running any `git commit` or `git push` command.
+
 ## Project Overview
 
 A VS Code language extension for `sw-description` files (SWUpdate firmware update descriptors).

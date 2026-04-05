@@ -16,6 +16,8 @@ permissions:
 jobs:
   publish-marketplace:
     runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
 
     steps:
       - name: Resolve release tag
@@ -26,8 +28,6 @@ jobs:
           echo "release_tag=v$tag" >> "$GITHUB_OUTPUT"
 
       - name: Download VSIX from release
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: gh release download "${{ steps.tag.outputs.release_tag }}" --repo "${{ github.repository }}" --pattern "*.vsix"
 
       - name: Validate marketplace token
