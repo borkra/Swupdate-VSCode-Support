@@ -40,20 +40,9 @@ function syncPackageVersion(packagePath, version, dryRun) {
 }
 
 function syncLockfileVersion(lockfilePath, packageName, version, dryRun) {
-    if (!fs.existsSync(lockfilePath)) {
-        return;
-    }
-
-    const lock = readJson(lockfilePath);
-    lock.name = packageName;
-    lock.version = version;
-    if (lock.packages && lock.packages['']) {
-        lock.packages[''].name = packageName;
-        lock.packages[''].version = version;
-    }
-    if (!dryRun) {
-        writeJson(lockfilePath, lock);
-    }
+    // Intentionally not updating version fields in package-lock.json.
+    // Those fields are cosmetic and do not affect npm install behaviour.
+    // Keeping them unchanged preserves the lockfile hash so the CI npm cache key is stable across releases.
 }
 
 function finalizeReleaseNotes(version, dryRun) {
