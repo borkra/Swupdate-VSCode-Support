@@ -33,6 +33,5 @@ jobs:
       - name: Upload VSIX artifact
         uses: actions/upload-artifact@v7
         with:
-          name: swupdate-lang-vsix
-          path: swupdate-lang.vsix
+          path: "*.vsix"
           if-no-files-found: error

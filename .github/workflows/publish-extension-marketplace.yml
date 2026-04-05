@@ -38,12 +38,12 @@ jobs:
           fi
 
       - name: Publish to VS Code Marketplace
-        run: npx @vscode/vsce publish --no-yarn --packagePath swupdate-lang.vsix
+        run: npx @vscode/vsce publish --no-yarn --packagePath *.vsix
         env:
           VSCE_PAT: ${{ secrets['VSCE_PAT'] }}
 
       - name: Publish to Open VSX Registry
         if: ${{ env.OVSX_PAT != '' }}
-        run: npx ovsx publish --packagePath swupdate-lang.vsix
+        run: npx ovsx publish --packagePath *.vsix
         env:
           OVSX_PAT: ${{ secrets['OVSX_PAT'] }}

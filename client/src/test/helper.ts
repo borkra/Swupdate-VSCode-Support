@@ -62,7 +62,7 @@ async function activateExtensions() {
 	}
 	await swupdateExt.activate();
 
-	const { extensionDependencies } = require('../../package.json');
+	const { extensionDependencies } = require('../../../package.json');
 	const libconfigId: string = extensionDependencies[0];
 	const ext = vscode.extensions.getExtension(libconfigId);
 
