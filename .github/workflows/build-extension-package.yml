@@ -24,7 +24,7 @@ jobs:
     steps:
       - name: Checkout
         run: |
-          gh auth git-setup
+          gh auth setup-git
           git clone --depth=1 "https://github.com/${{ github.repository }}.git" .
 
       - name: Set up, install and build
