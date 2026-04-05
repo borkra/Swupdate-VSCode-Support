@@ -163,5 +163,7 @@ Key spec rules encoded in the plugin:
 
 Located in `.github/workflows/`:
 - `build-extension-package.yml` — builds and packages vsix on push/PR
-- `publish-extension-release.yml` — publishes GitHub release
+- `publish-extension-release.yml` — publishes GitHub release; creates a git tag with a `v` prefix (e.g. `v1.2.3`) and a release commit `chore(release): v1.2.3`
 - `publish-extension-marketplace.yml` — publishes to VS Code Marketplace (triggered by tag `v*` or manual dispatch with an existing release tag)
+
+**Release tag format:** always `v<semver>` (e.g. `v1.1.2`). The tag is created by `gh release create` and points to the release commit.
