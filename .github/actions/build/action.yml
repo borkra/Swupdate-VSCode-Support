@@ -15,10 +15,6 @@ runs:
       run: npm install
       shell: bash
 
-    - name: Build extension
-      run: npm run compile && npm run bundle
-      shell: bash
-
-    - name: Package VSIX
-      run: npx @vscode/vsce package --no-yarn --out swupdate-lang.vsix
+    - name: Build and package VSIX
+      run: npm run package:local
       shell: bash
