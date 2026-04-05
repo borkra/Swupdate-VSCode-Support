@@ -87,9 +87,11 @@
 		"install:local": "npm run package:local && node scripts/smart-reinstall.js"
 	},
 	"devDependencies": {
-		"@vscode/test-electron": "^2.5.2",
 		"@types/node": "^20.0.0",
+		"@vscode/test-electron": "^2.5.2",
+		"@vscode/vsce": "^3.7.1",
 		"esbuild": "^0.25.0",
+		"ovsx": "^0.10.10",
 		"typescript": "^5.0.0"
 	}
 }
