@@ -2,7 +2,7 @@
 	"name": "swupdate-lang",
 	"displayName": "SWUpdate",
 	"description": "SWUpdate sw-description language support with completion and validation",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"icon": "media/icon.png",
 	"license": "MIT",
 	"keywords": [
