@@ -15,7 +15,7 @@
 	"publisher": "borkra",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/borkra/swupdate-vscode-support"
+		"url": "https://github.com/borkra/Swupdate-VSCode-Support"
 	},
 	"engines": {
 		"vscode": "^1.82.0"

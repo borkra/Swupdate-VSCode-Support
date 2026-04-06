@@ -5,6 +5,7 @@
 - Fixed `SwupdateServer.trace.server` configuration key casing to match the LSP client ID so VS Code trace logging works correctly.
 - Release script (`scripts/update-version.js`) now removes the `## Unreleased` section entirely on publish instead of leaving a placeholder.
 - Bumped `@types/node` from `^16.0.0` to `^18.0.0` in server and client to match the minimum VS Code Node runtime.
+- Fixed repository URL in `package.json` (casing was incorrect: `swupdate-vscode-support` → `Swupdate-VSCode-Support`).
 
 ## 1.0.0
 - Initial release.
