@@ -71,7 +71,7 @@ function finalizeReleaseNotes(version, dryRun) {
         return;
     }
 
-    const replacement = `## Unreleased\n- No changes yet.\n\n${versionHeading}\n${body}\n`;
+    const replacement = `${versionHeading}\n${body}\n`;
     changelog = changelog.replace(/## Unreleased\n([\s\S]*?)(?=\n## |$)/, replacement);
     fs.writeFileSync(changelogPath, changelog, 'utf8');
     console.log(`Finalized CHANGELOG release notes for ${version}.`);

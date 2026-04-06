@@ -9,7 +9,7 @@
 A VS Code language extension for `sw-description` files (SWUpdate firmware update descriptors).
 It provides syntax highlighting, semantic validation, and completions via a Language Server Protocol (LSP) server.
 
-The extension depends on `borkra.libconfig-lang` (sibling project at `../Libconfig-VsCode-Support`)
+The extension depends on `borkra.libconfig-borkra` (sibling project at `../Libconfig-VsCode-Support`)
 for libconfig grammar and base parsing. That dependency must be installed before the swupdate extension works.
 
 ---
@@ -34,7 +34,7 @@ Swupdate-VSCode-Support/
     e2e.js / e2e.sh                 — E2E test runner (downloads VS Code, installs deps, runs tests)
     bundle.js                       — esbuild bundler for client + server
     smart-reinstall.js              — Uninstalls + installs vsix into code and code-insiders
-    update-version.js               — Bumps version across package.json files
+    update-version.js               — Use this script to bump versions. Never manually edit `package.json` versions or `CHANGELOG.md` during a release. Run `node scripts/update-version.js <version>`. It updates version in root, `client/`, and `server/` `package.json`, and moves `## Unreleased` content into `## <version>` in `CHANGELOG.md`, removing the Unreleased section. Use `--dry-run` to validate without writing. Do not edit `package-lock.json` versions — the script intentionally skips them.
 ```
 
 ---
@@ -57,7 +57,7 @@ Swupdate-VSCode-Support/
 
 The test runner (`scripts/e2e.js`) installs the libconfig dependency from:
 1. `LIBCONFIG_VSIX_PATH` environment variable (preferred for local dev)
-2. Marketplace ID `borkra.libconfig-lang` (CI / if already published)
+2. Marketplace ID `borkra.libconfig-borkra` (CI / if already published)
 
 **Local dev workflow:**
 
@@ -69,7 +69,7 @@ Use the VS Code **`test`** task (has `LIBCONFIG_VSIX_PATH` pre-configured), or r
 npm run package:local
 
 # 2. Run tests (from this workspace):
-LIBCONFIG_VSIX_PATH=../Libconfig-VsCode-Support/libconfig-lang.vsix npm test
+LIBCONFIG_VSIX_PATH=../Libconfig-VsCode-Support/libconfig-borkra.vsix npm test
 ```
 
 ### Building and installing locally

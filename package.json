@@ -58,7 +58,7 @@
 			"type": "object",
 			"title": "SWUpdate Configuration",
 			"properties": {
-				"swupdateServer.trace.server": {
+				"SwupdateServer.trace.server": {
 					"scope": "window",
 					"type": "string",
 					"enum": [

@@ -1,7 +1,9 @@
 # Change Log
 
 ## Unreleased
-- Updated documentation per VSCode marketplace requirements
+- Updated documentation per VSCode marketplace requirements.
+- Fixed `SwupdateServer.trace.server` configuration key casing to match the LSP client ID so VS Code trace logging works correctly.
+- Release script (`scripts/update-version.js`) now removes the `## Unreleased` section entirely on publish instead of leaving a placeholder.
 
 ## 1.0.0
 - Initial release.
