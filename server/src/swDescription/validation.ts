@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: 2026 borkra
 'use strict';
 
+import * as l10n from '@vscode/l10n';
 import {
 	Diagnostic,
 	DiagnosticSeverity,
@@ -72,22 +73,22 @@ const propertyValidators: Record<string, Validator> = {
 			if (stringValue) {
 				const normalized = stringValue.toLowerCase();
 				if (!compressedValues.has(normalized)) {
-					ctx.addWarning(ctx.property, "Unsupported compression. Expected one of: 'zlib', 'zstd', 'xz'.");
+					ctx.addWarning(ctx.property, l10n.t("Unsupported compression. Expected one of: 'zlib', 'zstd', 'xz'."));
 				}
 			}
 		} else if (ctx.value.type !== 'boolean') {
-			ctx.addWarning(ctx.property, "Expected string or boolean value for 'compressed'.");
+			ctx.addWarning(ctx.property, l10n.t("Expected string or boolean value for 'compressed'."));
 		}
 	},
 	'encrypted': (ctx) => {
 		if (ctx.value.type !== 'boolean' && ctx.value.type !== 'string') {
-			ctx.addWarning(ctx.property, "Expected string or boolean value for 'encrypted'.");
+			ctx.addWarning(ctx.property, l10n.t("Expected string or boolean value for 'encrypted'."));
 		}
 	},
 	'update-type': (ctx) => {
 		const stringValue = readStringValue(ctx.value);
 		if (stringValue !== null && stringValue.trim().length === 0) {
-			ctx.addWarning(ctx.property, "'update-type' should not be empty.");
+			ctx.addWarning(ctx.property, l10n.t("'update-type' should not be empty."));
 		}
 	},
 	'sha256': (ctx) => {
@@ -97,29 +98,29 @@ const propertyValidators: Record<string, Validator> = {
 			!SW_DESCRIPTION_SHA256_REGEX.test(stringValue) &&
 			!SW_DESCRIPTION_SHA256_FUNCTION_REGEX.test(stringValue)
 		) {
-			ctx.addWarning(ctx.property, "'sha256' should be a 64-character hexadecimal string or a $swupdate_get_sha256(...) value.");
+			ctx.addWarning(ctx.property, l10n.t("'sha256' should be a 64-character hexadecimal string or a $swupdate_get_sha256(...) value."));
 		}
 	},
 	'ivt': (ctx) => {
 		const stringValue = readStringValue(ctx.value);
 		if (stringValue !== null && !SW_DESCRIPTION_IVT_REGEX.test(stringValue)) {
-			ctx.addWarning(ctx.property, "'ivt' should be a 32-character hexadecimal string.");
+			ctx.addWarning(ctx.property, l10n.t("'ivt' should be a 32-character hexadecimal string."));
 		}
 	},
 	'aes-key': (ctx) => {
 		const stringValue = readStringValue(ctx.value);
 		if (stringValue !== null && !SW_DESCRIPTION_AES_KEY_REGEX.test(stringValue)) {
-			ctx.addWarning(ctx.property, "'aes-key' should be a 32/48/64-character hexadecimal string.");
+			ctx.addWarning(ctx.property, l10n.t("'aes-key' should be a 32/48/64-character hexadecimal string."));
 		}
 	},
 	'hardware-compatibility': (ctx) => {
 		if (ctx.value.type !== 'array') {
-			ctx.addWarning(ctx.property, "Expected array value for 'hardware-compatibility'.");
+			ctx.addWarning(ctx.property, l10n.t("Expected array value for 'hardware-compatibility'."));
 		} else {
 			const arrayItems = readArrayChildren(ctx.value);
 			for (const item of arrayItems) {
 				if (item.type !== 'string') {
-					ctx.addWarning(ctx.property, "'hardware-compatibility' array should contain only strings.");
+					ctx.addWarning(ctx.property, l10n.t("'hardware-compatibility' array should contain only strings."));
 					break;
 				}
 			}
@@ -127,7 +128,7 @@ const propertyValidators: Record<string, Validator> = {
 	},
 	'ref': (ctx) => {
 		if (ctx.value.type !== 'string') {
-			ctx.addWarning(ctx.property, "Expected string value for 'ref'.");
+			ctx.addWarning(ctx.property, l10n.t("Expected string value for 'ref'."));
 		}
 	},
 	'fstype': (ctx) => {
@@ -135,7 +136,7 @@ const propertyValidators: Record<string, Validator> = {
 		if (stringValue !== null) {
 			const normalized = stringValue.toLowerCase();
 			if (!filesystemValues.has(normalized)) {
-				ctx.addWarning(ctx.property, `Unsupported fstype. Expected one of: ${FILESYSTEM_VALUES_MSG}.`);
+				ctx.addWarning(ctx.property, l10n.t("Unsupported fstype. Expected one of: {0}.", FILESYSTEM_VALUES_MSG));
 			}
 		}
 	},
@@ -144,12 +145,12 @@ const propertyValidators: Record<string, Validator> = {
 			return;
 		}
 		if (ctx.value.type !== 'string') {
-			ctx.addError(ctx.property, "Expected string value for 'labeltype'.");
+			ctx.addError(ctx.property, l10n.t("Expected string value for 'labeltype'."));
 			return;
 		}
 		const stringValue = readStringValue(ctx.value);
 		if (stringValue !== null && !diskpartLabeltypeValues.has(stringValue.toLowerCase())) {
-			ctx.addError(ctx.property, `Unsupported labeltype. Expected one of: ${DISKPART_LABELTYPE_VALUES_MSG}.`);
+			ctx.addError(ctx.property, l10n.t("Unsupported labeltype. Expected one of: {0}.", DISKPART_LABELTYPE_VALUES_MSG));
 		}
 	},
 	'offset': (ctx) => {
@@ -157,7 +158,7 @@ const propertyValidators: Record<string, Validator> = {
 		if (stringValue !== null && 
 			!SW_DESCRIPTION_OFFSET_REGEX.test(stringValue) && 
 			!SW_DESCRIPTION_EXTERNAL_VARIABLE_REGEX.test(stringValue)) {
-			ctx.addWarning(ctx.property, "'offset' should be a decimal string with optional K, M, or G suffix, or an external variable using @@variable@@ syntax.");
+			ctx.addWarning(ctx.property, l10n.t("'offset' should be a decimal string with optional K, M, or G suffix, or an external variable using @@variable@@ syntax."));
 		}
 	},
 	'size': (ctx) => {
@@ -170,10 +171,10 @@ const propertyValidators: Record<string, Validator> = {
 			if (stringValue !== null && 
 				!SW_DESCRIPTION_SIZE_REGEX.test(stringValue) && 
 				!SW_DESCRIPTION_EXTERNAL_VARIABLE_REGEX.test(stringValue)) {
-				ctx.addError(ctx.property, "'size' should be a number or a decimal string with optional K, M, or G suffix, or an external variable using @@variable@@ syntax.");
+				ctx.addError(ctx.property, l10n.t("'size' should be a number or a decimal string with optional K, M, or G suffix, or an external variable using @@variable@@ syntax."));
 			}
 		} else {
-			ctx.addError(ctx.property, "Invalid partition 'size' value. Expected number or string.");
+			ctx.addError(ctx.property, l10n.t("Invalid partition 'size' value. Expected number or string."));
 		}
 	},
 	'type': (ctx) => {
@@ -182,7 +183,7 @@ const propertyValidators: Record<string, Validator> = {
 			return;
 		}
 		if (ctx.value.type !== 'string') {
-			ctx.addWarning(ctx.property, "Expected string value for 'type'.");
+			ctx.addWarning(ctx.property, l10n.t("Expected string value for 'type'."));
 			return;
 		}
 		const stringValue = readStringValue(ctx.value);
@@ -190,7 +191,7 @@ const propertyValidators: Record<string, Validator> = {
 			const typeSet = SW_DESCRIPTION_TYPE_VALUE_SETS_BY_SECTION[ctx.section];
 			if (typeSet && !typeSet.has(stringValue)) {
 				const allowedTypes = TYPE_VALUES_MSG[ctx.section];
-				ctx.addWarning(ctx.property, `Unsupported type for '${ctx.section}'. Expected one of: ${allowedTypes}.`);
+				ctx.addWarning(ctx.property, l10n.t("Unsupported type for '{0}'. Expected one of: {1}.", ctx.section, allowedTypes));
 			}
 		}
 	}
@@ -257,7 +258,7 @@ export function getSwDescriptionSemanticDiagnostics(
 
 		// Quick type checks for known keys - return early if wrong type
 		if (booleanKeys.has(key) && value.type !== 'boolean') {
-			addWarning(property, `Expected boolean value for '${property.name}'.`);
+			addWarning(property, l10n.t("Expected boolean value for '{0}'.", property.name));
 			return;
 		}
 
@@ -265,18 +266,18 @@ export function getSwDescriptionSemanticDiagnostics(
 		// Native libconfig booleans are not parsed by the handler API — it uses strtobool().
 		if (skipUnknownKeyCheck) {
 			if (value.type === 'boolean') {
-				addWarning(property, `Use a strtobool string for '${property.name}': expected one of ${STRTOBOOL_VALUES_MSG}.`);
+				addWarning(property, l10n.t("Use a strtobool string for '{0}': expected one of {1}.", property.name, STRTOBOOL_VALUES_MSG));
 			} else if (value.type === 'string') {
 				const sv = readStringValue(value);
 				if (sv !== null && BOOLEAN_LIKE_REGEX.test(sv) && !strtoboolValues.has(sv)) {
-					addWarning(property, `'${property.name}' is not a valid strtobool string. Expected one of: ${STRTOBOOL_VALUES_MSG}.`);
+					addWarning(property, l10n.t("'{0}' is not a valid strtobool string. Expected one of: {1}.", property.name, STRTOBOOL_VALUES_MSG));
 				}
 			}
 			// Continue — still run named validators (e.g. labeltype, partition-N) inside properties blocks.
 		}
 
 		if (stringKeys.has(key) && value.type !== 'string') {
-			addWarning(property, `Expected string value for '${property.name}'.`);
+			addWarning(property, l10n.t("Expected string value for '{0}'.", property.name));
 			return;
 		}
 
@@ -296,7 +297,7 @@ export function getSwDescriptionSemanticDiagnostics(
 			!SW_DESCRIPTION_ENTRY_KNOWN_KEYS.has(key) &&
 			!DISKPART_PARTITION_KEY_REGEX.test(property.name)
 		) {
-			addWarning(property, `Unknown property '${property.name}'. Check for typos.`);
+			addWarning(property, l10n.t("Unknown property '{0}'. Check for typos.", property.name));
 		}
 	};
 
@@ -371,14 +372,14 @@ function validateDiskpartPartitionProperty(
 	}
 
 	if (value.type !== 'array') {
-		addWarning(property, `Expected array value for '${property.name}'.`);
+		addWarning(property, l10n.t("Expected array value for '{0}'.", property.name));
 		return;
 	}
 
 	for (const item of readArrayChildren(value)) {
 		const entry = readStringValue(item);
 		if (entry === null) {
-			addWarning(item, `Expected string entry in '${property.name}'.`);
+			addWarning(item, l10n.t("Expected string entry in '{0}'.", property.name));
 			continue;
 		}
 
@@ -395,7 +396,7 @@ function validateDiskpartPartitionProperty(
 			!SW_DESCRIPTION_SIZE_REGEX.test(entryValue) &&
 			!SW_DESCRIPTION_EXTERNAL_VARIABLE_REGEX.test(entryValue)
 		) {
-			addError(item, "Invalid partition 'size' value. Expected a decimal string with optional K, M, or G suffix, or an external variable using @@variable@@ syntax.");
+			addError(item, l10n.t("Invalid partition 'size' value. Expected a decimal string with optional K, M, or G suffix, or an external variable using @@variable@@ syntax."));
 		}
 	}
 }

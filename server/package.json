@@ -10,9 +10,9 @@
 		"url": "https://github.com/borkra/swupdate-vscode-support"
 	},
 	"dependencies": {
+		"@vscode/l10n": "^0.0.18",
 		"vscode-languageserver": "^9.0.1",
-		"vscode-languageserver-textdocument": "^1.0.12",
-		"vscode-nls": "^5.2.0"
+		"vscode-languageserver-textdocument": "^1.0.12"
 	},
 	"devDependencies": {
 		"@types/node": "^18.0.0"

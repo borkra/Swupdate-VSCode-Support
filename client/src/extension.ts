@@ -109,7 +109,8 @@ export async function activate(context: ExtensionContext) {
 	// Options to control the language client
 	const clientOptions: LanguageClientOptions = {
 		// Register the SWUpdate language server for documents in swupdate mode.
-		documentSelector: SWUPDATE_DOCUMENT_SELECTOR as unknown as LanguageClientOptions['documentSelector']
+		documentSelector: SWUPDATE_DOCUMENT_SELECTOR as unknown as LanguageClientOptions['documentSelector'],
+		initializationOptions: vscode.l10n.uri ? { l10nUri: vscode.l10n.uri.toString() } : {}
 	};
 
 	// Create the language client and start the client.
@@ -127,7 +128,7 @@ export async function activate(context: ExtensionContext) {
 		registerLibconfigBridge(context, libconfigApiPromise);
 		registerLibconfigCompletionBridge(context, libconfigApiPromise);
 	} catch (err) {
-		vscode.window.showErrorMessage(`SWUpdate language server failed to start: ${err}`);
+		vscode.window.showErrorMessage(vscode.l10n.t("SWUpdate language server failed to start: {0}", String(err)));
 	}
 }
 

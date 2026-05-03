@@ -14,6 +14,7 @@ import {
 	TextDocumentSyncKind
 } from 'vscode-languageserver/node';
 import { TextDocument } from 'vscode-languageserver-textdocument';
+import * as l10n from '@vscode/l10n';
 
 import {
 	doValidation
@@ -39,7 +40,11 @@ const SWUPDATE_PARSED_NOTIFICATION = 'swupdate/libconfigParsed';
 // supports full document sync only
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 
-connection.onInitialize(() => {
+connection.onInitialize((params) => {
+	const l10nUri = (params.initializationOptions as { l10nUri?: string } | undefined)?.l10nUri;
+	if (l10nUri) {
+		try { l10n.config({ uri: l10nUri }); } catch { /* ignore */ }
+	}
 	return {
 		capabilities: {
 			textDocumentSync: TextDocumentSyncKind.Incremental,

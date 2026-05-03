@@ -1,0 +1,6 @@
+{
+	"extension.displayName": "SWUpdate",
+	"extension.description": "SWUpdate sw-description language support with completion and validation",
+	"config.title": "SWUpdate Configuration",
+	"config.trace.description": "Traces the communication between VS Code and the language server."
+}
