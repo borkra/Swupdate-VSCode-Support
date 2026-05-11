@@ -18,4 +18,8 @@ server/out/
 # Packaged extension
 *.vsix
 
+# Generated SBOM files
+sbom.cdx.json
+sbom.spdx.json
+
 
