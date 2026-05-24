@@ -5,6 +5,7 @@
 - Added `package.nls.json` for localizable `contributes` strings (display name, configuration title and description).
 - Added `l10n/bundle.l10n.json` as the English source bundle for all runtime strings.
 - Added `extract-l10n` npm script to regenerate `bundle.l10n.json` from source; runs automatically as part of `package:local` and `vscode:prepublish`.
+- Added `sbom`, `sbom:cyclonedx`, and `sbom:spdx` npm scripts to generate CycloneDX and SPDX SBOM outputs.
 
 ## 1.0.1
 - Updated documentation per VSCode marketplace requirements.
