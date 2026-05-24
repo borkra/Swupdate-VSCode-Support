@@ -86,6 +86,9 @@
 		"postinstall": "cd client && npm install && cd ../server && npm install && cd ..",
 		"test": "sh ./scripts/e2e.sh",
 		"install:local": "npm run package:local && node scripts/smart-reinstall.js",
+		"sbom": "npm run sbom:cyclonedx && npm run sbom:spdx",
+		"sbom:cyclonedx": "npx @cyclonedx/cdxgen -t javascript -o sbom.cdx.json",
+		"sbom:spdx": "npx @cyclonedx/cdxgen -t javascript -o sbom.spdx.json --format spdx",
 		"extract-l10n": "npx @vscode/l10n-dev export --outDir ./l10n './client/src/**/*.ts' './server/src/**/*.ts'"
 	},
 	"devDependencies": {
