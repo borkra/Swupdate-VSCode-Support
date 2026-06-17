@@ -9,6 +9,7 @@ import {
 } from 'vscode-languageserver/node';
 
 import {
+	SW_DESCRIPTION_BOOLEAN_KEYS,
 	SW_DESCRIPTION_COLON_VALUE_KEYS,
 	SW_DESCRIPTION_COMPRESSED_VALUES,
 	SW_DESCRIPTION_DISKPART_LABELTYPE_VALUES,
@@ -47,7 +48,8 @@ const SW_DESCRIPTION_COMPRESSED_ITEMS = createLiteralValueCompletions(SW_DESCRIP
 
 const SW_DESCRIPTION_ENCRYPTED_ITEMS: CompletionItem[] = [
 	...createLiteralValueCompletions(SW_DESCRIPTION_ENCRYPTED_VALUES),
-	{ label: 'true', kind: CompletionItemKind.Keyword, insertText: 'true' }
+	{ label: 'true', kind: CompletionItemKind.Keyword, insertText: 'true' },
+	{ label: 'false', kind: CompletionItemKind.Keyword, insertText: 'false' }
 ];
 
 const SW_DESCRIPTION_DISKPART_LABELTYPE_ITEMS = createLiteralValueCompletions(SW_DESCRIPTION_DISKPART_LABELTYPE_VALUES);
@@ -57,6 +59,12 @@ const SW_DESCRIPTION_FILESYSTEM_ITEMS = createLiteralValueCompletions(SW_DESCRIP
 const SW_DESCRIPTION_UPDATE_TYPE_ITEMS = createLiteralValueCompletions(SW_DESCRIPTION_UPDATE_TYPE_VALUES);
 
 const SW_DESCRIPTION_STRTOBOOL_ITEMS = createLiteralValueCompletions(SW_DESCRIPTION_STRTOBOOL_VALUES);
+
+// Native libconfig boolean keys (e.g. reboot, install-if-different) take true/false keywords.
+const SW_DESCRIPTION_BOOLEAN_ITEMS: CompletionItem[] = [
+	{ label: 'true', kind: CompletionItemKind.Keyword, insertText: 'true' },
+	{ label: 'false', kind: CompletionItemKind.Keyword, insertText: 'false' }
+];
 
 const SW_DESCRIPTION_TYPE_ITEMS_BY_SECTION: Readonly<Record<SwDescriptionTypeSection, CompletionItem[]>> = {
 	images: createLiteralValueCompletions(SW_DESCRIPTION_TYPE_VALUES_BY_SECTION.images),
@@ -90,6 +98,10 @@ const valueCompletionsByAssignmentKey: Readonly<Record<string, ValueCompletionPr
 	labeltype: provideLabeltypeValueCompletions,
 	'update-type': () => SW_DESCRIPTION_UPDATE_TYPE_ITEMS,
 	type: provideTypeValueCompletions,
+	// Native libconfig boolean keys take true/false keywords.
+	...Object.fromEntries(
+		SW_DESCRIPTION_BOOLEAN_KEYS.map(key => [key, () => SW_DESCRIPTION_BOOLEAN_ITEMS])
+	),
 	// Handler properties-block keys parsed via strtobool() — must use "true"/"TRUE"/"false"/"FALSE"
 	...Object.fromEntries(
 		SW_DESCRIPTION_STRTOBOOL_KEYS.map(key => [key, () => SW_DESCRIPTION_STRTOBOOL_ITEMS])

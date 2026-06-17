@@ -126,7 +126,6 @@ export async function activate(context: ExtensionContext) {
 		await client.start();
 		const libconfigApiPromise = resolveLibconfigApi(context);
 		registerLibconfigBridge(context, libconfigApiPromise);
-		registerLibconfigCompletionBridge(context, libconfigApiPromise);
 	} catch (err) {
 		vscode.window.showErrorMessage(vscode.l10n.t("SWUpdate language server failed to start: {0}", String(err)));
 	}
@@ -202,6 +201,7 @@ function registerLibconfigBridge(
 
 			client?.sendNotification(SWUPDATE_PARSED_NOTIFICATION, payload);
 		} catch (error) {
+			console.error(`SWUpdate: failed to parse/sync ${documentUri}:`, error);
 		}
 	};
 
@@ -270,41 +270,6 @@ function registerLibconfigBridge(
 	});
 }
 
-function registerLibconfigCompletionBridge(
-	context: ExtensionContext,
-	libconfigApiPromise: Promise<LibconfigExtensionApi | undefined>
-): void {
-	const completionProvider = vscode.languages.registerCompletionItemProvider(
-		SWUPDATE_DOCUMENT_SELECTOR as vscode.DocumentSelector,
-		{
-			provideCompletionItems: async (document, position) => {
-				const api = await libconfigApiPromise;
-				if (!api) {
-					return [];
-				}
-
-				const offset = document.offsetAt(position);
-				const entries = await api.getCompletionItems(document.uri.toString(), document.getText(), offset);
-				return entries.map((entry) => {
-					const item = new vscode.CompletionItem(entry.label, entry.kind as vscode.CompletionItemKind | undefined);
-					if (entry.insertText) {
-						item.insertText = entry.insertText;
-					}
-					if (entry.detail) {
-						item.detail = entry.detail;
-					}
-					if (entry.documentation) {
-						item.documentation = entry.documentation;
-					}
-					return item;
-				});
-			}
-		}
-	);
-
-	context.subscriptions.push(completionProvider);
-}
-
 async function resolveLibconfigApi(context: ExtensionContext): Promise<LibconfigExtensionApi | undefined> {
 	const libconfigId: string = context.extension.packageJSON?.extensionDependencies?.[0];
 	const extension = vscode.extensions.getExtension<LibconfigExtensionApi>(libconfigId);
@@ -314,8 +279,8 @@ async function resolveLibconfigApi(context: ExtensionContext): Promise<Libconfig
 	}
 
 	const api = await extension.activate();
-	if (!api || api.apiVersion !== 1 || typeof api.getCompletionItems !== 'function') {
-		vscode.window.showErrorMessage('LibConfig extension API is unavailable or incompatible: getCompletionItems is required.');
+	if (!api || api.apiVersion !== 1 || typeof api.getParsedDocument !== 'function') {
+		vscode.window.showErrorMessage('LibConfig extension API is unavailable or incompatible: getParsedDocument is required.');
 		return undefined;
 	}
 
