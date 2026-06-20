@@ -1,0 +1,17 @@
+software = {
+	version = "1.0.0";
+	description = "Example with readback handler for partition verification";
+	update-type = "application";
+
+	scripts: (
+		{
+			device = "/dev/mmcblk2p1";
+			type = "readback";
+			properties: {
+				sha256 = "e7afc9bd98afd4eb7d8325196d21f1ecc0c8864d6342bfc6b6b6c84eac86eb42";
+				size = "184728576";
+				offset = "0";
+			};
+		}
+	);
+};

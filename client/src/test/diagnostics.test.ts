@@ -32,9 +32,9 @@ export async function runDiagnosticsTest(): Promise<void> {
         { message: "Expected string or boolean value for 'encrypted'", severity: vscode.DiagnosticSeverity.Warning },
         { message: "'offset' should be a decimal string with optional K, M, or G suffix", severity: vscode.DiagnosticSeverity.Warning },
         { message: 'Unsupported fstype', severity: vscode.DiagnosticSeverity.Warning },
-        { message: "'aes-key' should be a 32/48/64-character hexadecimal string.", severity: vscode.DiagnosticSeverity.Warning },
-        { message: "'ivt' should be a 32-character hexadecimal string.", severity: vscode.DiagnosticSeverity.Warning },
-        { message: "'sha256' should be a 64-character hexadecimal string or a $swupdate_get_sha256(...) value", severity: vscode.DiagnosticSeverity.Warning }
+        { message: "'aes-key' should be a 32/48/64-character hexadecimal string or a function call", severity: vscode.DiagnosticSeverity.Warning },
+        { message: "'ivt' should be a 32-character hexadecimal string or a function call", severity: vscode.DiagnosticSeverity.Warning },
+        { message: "'sha256' should be a 64-character hexadecimal string or a function call", severity: vscode.DiagnosticSeverity.Warning }
       ]
     },
     {

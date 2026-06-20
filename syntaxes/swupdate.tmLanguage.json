@@ -23,8 +23,8 @@
 			}
 		},
 		"swupdate-function": {
-			"match": "(\\$)(swupdate_get_sha256)(\\()([^)]*)(\\))",
-			"captures": {
+			"begin": "(\\$)([a-zA-Z_][a-zA-Z0-9_]*)(\\()",
+			"beginCaptures": {
 				"1": {
 					"name": "punctuation.definition.variable.swupdate"
 				},
@@ -33,14 +33,20 @@
 				},
 				"3": {
 					"name": "punctuation.section.parens.begin.swupdate"
-				},
-				"4": {
-					"name": "variable.parameter.swupdate"
-				},
-				"5": {
+				}
+			},
+			"end": "(\\))",
+			"endCaptures": {
+				"1": {
 					"name": "punctuation.section.parens.end.swupdate"
 				}
-			}
+			},
+			"contentName": "variable.parameter.swupdate",
+			"patterns": [
+				{
+					"include": "#swupdate-external-variable"
+				}
+			]
 		}
 	},
 	"injections": {

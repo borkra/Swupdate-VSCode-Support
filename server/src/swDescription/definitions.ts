@@ -126,6 +126,7 @@ export const SW_DESCRIPTION_SCRIPT_TYPE_VALUES = [
 	'lua',
 	'shellscript',
 	'copy',
+	'readback',
 	'emmc_boot',
 	'emmc_boot_toggle',
 	'preinstall',
@@ -427,9 +428,16 @@ export const SW_DESCRIPTION_ENTRY_KNOWN_KEYS = new Set<string>([
 ]);
 
 export const SW_DESCRIPTION_SHA256_REGEX = /^[0-9a-fA-F]{64}$/;
+// Generic function call pattern: $function_name(...)
+export const SW_DESCRIPTION_FUNCTION_REGEX = /^\$[a-zA-Z_][a-zA-Z0-9_]*\([^\)]*\)$/;
+// Legacy: specific sha256 function (still accepted)
 export const SW_DESCRIPTION_SHA256_FUNCTION_REGEX = /^\$swupdate_get_sha256\([^\)]+\)$/;
+// Size/offset with optional K, M, G suffixes (for top-level use)
 export const SW_DESCRIPTION_SIZE_REGEX = /^\d+(K|M|G)?$/;
 export const SW_DESCRIPTION_OFFSET_REGEX = SW_DESCRIPTION_SIZE_REGEX;
+// Size/offset as plain scalar only (no suffixes - for use inside properties blocks)
+export const SW_DESCRIPTION_SIZE_SCALAR_REGEX = /^\d+$/;
+export const SW_DESCRIPTION_OFFSET_SCALAR_REGEX = SW_DESCRIPTION_SIZE_SCALAR_REGEX;
 export const SW_DESCRIPTION_IVT_REGEX = /^[0-9a-fA-F]{32}$/;
 export const SW_DESCRIPTION_AES_KEY_REGEX = /^[0-9a-fA-F]{32}$|^[0-9a-fA-F]{48}$|^[0-9a-fA-F]{64}$/;
 export const SW_DESCRIPTION_EXTERNAL_VARIABLE_REGEX = /^@@[^@]+@@$/;

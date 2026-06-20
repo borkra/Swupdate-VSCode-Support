@@ -22,11 +22,14 @@ import {
 	SW_DESCRIPTION_ENTRY_KNOWN_KEYS,
 	SW_DESCRIPTION_EXTERNAL_VARIABLE_REGEX,
 	SW_DESCRIPTION_FILESYSTEM_VALUES,
+	SW_DESCRIPTION_FUNCTION_REGEX,
 	SW_DESCRIPTION_IVT_REGEX,
 	SW_DESCRIPTION_OFFSET_REGEX,
+	SW_DESCRIPTION_OFFSET_SCALAR_REGEX,
 	SW_DESCRIPTION_SHA256_FUNCTION_REGEX,
 	SW_DESCRIPTION_SHA256_REGEX,
 	SW_DESCRIPTION_SIZE_REGEX,
+	SW_DESCRIPTION_SIZE_SCALAR_REGEX,
 	SW_DESCRIPTION_STRING_KEYS,
 	SW_DESCRIPTION_STRTOBOOL_VALUES,
 	SW_DESCRIPTION_TYPE_VALUES_BY_SECTION,
@@ -62,6 +65,7 @@ type ValidationContext = {
 	addWarning: (node: LibConfigPropertyNode | BaseLibConfigNode, message: string) => void;
 	addError: (node: LibConfigPropertyNode | BaseLibConfigNode, message: string) => void;
 	section?: SwDescriptionTypeSection;
+	isInsidePropertiesBlock?: boolean;
 };
 
 type Validator = (ctx: ValidationContext) => void;
@@ -96,21 +100,25 @@ const propertyValidators: Record<string, Validator> = {
 		if (
 			stringValue !== null &&
 			!SW_DESCRIPTION_SHA256_REGEX.test(stringValue) &&
-			!SW_DESCRIPTION_SHA256_FUNCTION_REGEX.test(stringValue)
+			!SW_DESCRIPTION_FUNCTION_REGEX.test(stringValue)
 		) {
-			ctx.addWarning(ctx.property, l10n.t("'sha256' should be a 64-character hexadecimal string or a $swupdate_get_sha256(...) value."));
+			ctx.addWarning(ctx.property, l10n.t("'sha256' should be a 64-character hexadecimal string or a function call like $swupdate_get_sha256(...)."));
 		}
 	},
 	'ivt': (ctx) => {
 		const stringValue = readStringValue(ctx.value);
-		if (stringValue !== null && !SW_DESCRIPTION_IVT_REGEX.test(stringValue)) {
-			ctx.addWarning(ctx.property, l10n.t("'ivt' should be a 32-character hexadecimal string."));
+		if (stringValue !== null && 
+			!SW_DESCRIPTION_IVT_REGEX.test(stringValue) &&
+			!SW_DESCRIPTION_FUNCTION_REGEX.test(stringValue)) {
+			ctx.addWarning(ctx.property, l10n.t("'ivt' should be a 32-character hexadecimal string or a function call like $function_name(...)."));
 		}
 	},
 	'aes-key': (ctx) => {
 		const stringValue = readStringValue(ctx.value);
-		if (stringValue !== null && !SW_DESCRIPTION_AES_KEY_REGEX.test(stringValue)) {
-			ctx.addWarning(ctx.property, l10n.t("'aes-key' should be a 32/48/64-character hexadecimal string."));
+		if (stringValue !== null && 
+			!SW_DESCRIPTION_AES_KEY_REGEX.test(stringValue) &&
+			!SW_DESCRIPTION_FUNCTION_REGEX.test(stringValue)) {
+			ctx.addWarning(ctx.property, l10n.t("'aes-key' should be a 32/48/64-character hexadecimal string or a function call like $function_name(...)."));
 		}
 	},
 	'hardware-compatibility': (ctx) => {
@@ -155,10 +163,23 @@ const propertyValidators: Record<string, Validator> = {
 	},
 	'offset': (ctx) => {
 		const stringValue = readStringValue(ctx.value);
-		if (stringValue !== null && 
-			!SW_DESCRIPTION_OFFSET_REGEX.test(stringValue) && 
-			!SW_DESCRIPTION_EXTERNAL_VARIABLE_REGEX.test(stringValue)) {
-			ctx.addWarning(ctx.property, l10n.t("'offset' should be a decimal string with optional K, M, or G suffix, or an external variable using @@variable@@ syntax."));
+		if (stringValue === null) {
+			return;
+		}
+		// Inside properties blocks: plain numbers, external variables, or function calls - but NO K/M/G suffixes
+		if (ctx.isInsidePropertiesBlock) {
+			if (!SW_DESCRIPTION_OFFSET_SCALAR_REGEX.test(stringValue) && 
+				!SW_DESCRIPTION_EXTERNAL_VARIABLE_REGEX.test(stringValue) &&
+				!SW_DESCRIPTION_FUNCTION_REGEX.test(stringValue)) {
+				ctx.addWarning(ctx.property, l10n.t("Inside 'properties' block, 'offset' must be a decimal number, external variable (@@var@@), or function call ($func()) - no K/M/G suffixes allowed."));
+			}
+		} else {
+			// Top-level: allow suffixes, external variables, and function calls
+			if (!SW_DESCRIPTION_OFFSET_REGEX.test(stringValue) && 
+				!SW_DESCRIPTION_EXTERNAL_VARIABLE_REGEX.test(stringValue) &&
+				!SW_DESCRIPTION_FUNCTION_REGEX.test(stringValue)) {
+				ctx.addWarning(ctx.property, l10n.t("'offset' should be a decimal string with optional K, M, or G suffix, an external variable (@@variable@@), or a function call ($function())."));
+			}
 		}
 	},
 	'size': (ctx) => {
@@ -168,10 +189,23 @@ const propertyValidators: Record<string, Validator> = {
 		}
 		if (ctx.value.type === 'string') {
 			const stringValue = readStringValue(ctx.value);
-			if (stringValue !== null && 
-				!SW_DESCRIPTION_SIZE_REGEX.test(stringValue) && 
-				!SW_DESCRIPTION_EXTERNAL_VARIABLE_REGEX.test(stringValue)) {
-				ctx.addError(ctx.property, l10n.t("'size' should be a number or a decimal string with optional K, M, or G suffix, or an external variable using @@variable@@ syntax."));
+			if (stringValue === null) {
+				return;
+			}
+			// Inside properties blocks: plain numbers, external variables, or function calls - but NO K/M/G suffixes
+			if (ctx.isInsidePropertiesBlock) {
+				if (!SW_DESCRIPTION_SIZE_SCALAR_REGEX.test(stringValue) && 
+					!SW_DESCRIPTION_EXTERNAL_VARIABLE_REGEX.test(stringValue) &&
+					!SW_DESCRIPTION_FUNCTION_REGEX.test(stringValue)) {
+					ctx.addError(ctx.property, l10n.t("Inside 'properties' block, 'size' must be a decimal number, external variable (@@var@@), or function call ($func()) - no K/M/G suffixes allowed."));
+				}
+			} else {
+				// Top-level: allow suffixes, external variables, and function calls
+				if (!SW_DESCRIPTION_SIZE_REGEX.test(stringValue) && 
+					!SW_DESCRIPTION_EXTERNAL_VARIABLE_REGEX.test(stringValue) &&
+					!SW_DESCRIPTION_FUNCTION_REGEX.test(stringValue)) {
+					ctx.addError(ctx.property, l10n.t("'size' should be a number or a decimal string with optional K, M, or G suffix, an external variable (@@variable@@), or a function call ($function())."));
+				}
 			}
 		} else {
 			ctx.addError(ctx.property, l10n.t("Invalid partition 'size' value. Expected number or string."));
@@ -284,7 +318,7 @@ export function getSwDescriptionSemanticDiagnostics(
 		// Run specific validator if one exists for this key
 		const validator = propertyValidators[key];
 		if (validator) {
-			validator({ property, value, addWarning, addError, section });
+			validator({ property, value, addWarning, addError, section, isInsidePropertiesBlock: skipUnknownKeyCheck });
 		}
 
 		validateDiskpartPartitionProperty(property, value, addWarning, addError, section);
