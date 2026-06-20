@@ -2,7 +2,7 @@
 	"name": "swupdate-lang",
 	"displayName": "%extension.displayName%",
 	"description": "%extension.description%",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"icon": "media/icon.png",
 	"license": "MIT",
 	"keywords": [

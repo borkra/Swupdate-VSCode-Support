@@ -1,6 +1,6 @@
 # Change Log
 
-## Unreleased
+## 1.0.2
 - Added localization support via `@vscode/l10n`. All diagnostic messages and client-side error strings are now translatable.
 - Added `package.nls.json` for localizable `contributes` strings (display name, configuration title and description).
 - Added `l10n/bundle.l10n.json` as the English source bundle for all runtime strings.
