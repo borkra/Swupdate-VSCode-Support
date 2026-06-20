@@ -1,6 +1,6 @@
-name: Publish VS Code Marketplace Extension
+name: Publish Extension Registries
 
-run-name: "Publish to Marketplace — ${{ inputs.release_tag }}"
+run-name: "Publish ${{ inputs.publish_target }} — ${{ inputs.release_tag }}"
 
 on:
   workflow_dispatch:
@@ -9,6 +9,15 @@ on:
         description: GitHub release tag to publish (for example, v1.0.0)
         required: true
         type: string
+      publish_target:
+        description: Where to publish the VSIX
+        required: true
+        type: choice
+        default: both
+        options:
+          - both
+          - vscode
+          - ovsx
 
 permissions:
   contents: read
@@ -30,7 +39,8 @@ jobs:
       - name: Download VSIX from release
         run: gh release download "${{ steps.tag.outputs.release_tag }}" --repo "${{ github.repository }}" --pattern "*.vsix"
 
-      - name: Validate marketplace token
+      - name: Validate VS Code Marketplace token
+        if: ${{ inputs.publish_target == 'both' || inputs.publish_target == 'vscode' }}
         run: |
           if [ -z "${{ secrets['VSCE_PAT'] }}" ]; then
             echo "Missing marketplace token. Set repository secret VSCE_PAT."
@@ -38,12 +48,13 @@ jobs:
           fi
 
       - name: Publish to VS Code Marketplace
+        if: ${{ inputs.publish_target == 'both' || inputs.publish_target == 'vscode' }}
         run: npx @vscode/vsce publish --no-yarn --packagePath *.vsix
         env:
           VSCE_PAT: ${{ secrets['VSCE_PAT'] }}
 
       - name: Publish to Open VSX Registry
-        if: ${{ env.OVSX_PAT != '' }}
+        if: ${{ inputs.publish_target == 'both' || inputs.publish_target == 'ovsx' }}
         run: npx ovsx publish --packagePath *.vsix
         env:
           OVSX_PAT: ${{ secrets['OVSX_PAT'] }}
