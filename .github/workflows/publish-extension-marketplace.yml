@@ -1,6 +1,6 @@
-name: Publish Extension Registries
+name: Publish VS Code Marketplace Extension
 
-run-name: "Publish ${{ inputs.publish_target }} — ${{ inputs.release_tag }}"
+run-name: "Publish to Marketplace — ${{ inputs.release_tag }} (${{ inputs.publish_target }})"
 
 on:
   workflow_dispatch:
