@@ -6,6 +6,10 @@
 - Added `l10n/bundle.l10n.json` as the English source bundle for all runtime strings.
 - Added `extract-l10n` npm script to regenerate `bundle.l10n.json` from source; runs automatically as part of `package:local` and `vscode:prepublish`.
 - Added `sbom`, `sbom:cyclonedx`, and `sbom:spdx` npm scripts to generate CycloneDX and SPDX SBOM outputs.
+- Improved dynamic value validation support: function calls are now accepted for `sha256`, `ivt`, `aes-key`, `size`, and `offset` where appropriate.
+- Added context-aware `size`/`offset` validation for `properties` blocks: only scalar numbers, `@@variable@@`, or function calls are accepted there (no `K`/`M`/`G` suffixes).
+- Added missing boolean completions for native boolean keys and for `encrypted` value contexts.
+- Improved overall editor reliability and completion quality by removing duplicate suggestions and strengthening integration with the Libconfig parser.
 
 ## 1.0.1
 - Updated documentation per VSCode marketplace requirements.
