@@ -10,9 +10,9 @@ import { cleanupTestArtifacts } from './helper';
 async function runNamedTest(name: string, fn: () => Promise<void>): Promise<void> {
 	try {
 		await fn();
-		console.log(`PASS ${name}`);
+		process.stdout.write(`PASS ${name}\n`);
 	} catch (error) {
-		console.error(`FAIL ${name}`);
+		process.stderr.write(`FAIL ${name}\n`);
 		throw error;
 	} finally {
 		await cleanupTestArtifacts();

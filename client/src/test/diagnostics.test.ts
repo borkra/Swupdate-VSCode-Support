@@ -140,7 +140,7 @@ export async function runDiagnosticsTest(): Promise<void> {
         { message: "Invalid partition 'size' value. Expected number or string.", severity: vscode.DiagnosticSeverity.Error },
         // labeltype assigned a number (not a string)
         { message: "Expected string value for 'labeltype'", severity: vscode.DiagnosticSeverity.Error },
-        // native libconfig boolean inside properties block — must use strtobool string
+        // native libconfig boolean inside properties block - must use strtobool string
         { message: "Use a strtobool string for 'atomic-install'", severity: vscode.DiagnosticSeverity.Warning },
         // boolean-ish string with wrong case inside properties block
         { message: "'force' is not a valid strtobool string", severity: vscode.DiagnosticSeverity.Warning },

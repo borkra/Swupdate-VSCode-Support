@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 
 const rootDir = path.resolve(__dirname, '..');
-const packageDirs = ['', 'client', 'server'];
+const packageDirs = ['', 'client'];
 
 function readJson(filePath) {
     return JSON.parse(fs.readFileSync(filePath, 'utf8'));

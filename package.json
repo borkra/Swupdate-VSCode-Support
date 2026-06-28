@@ -54,50 +54,34 @@
 				"scopeName": "source.swupdate",
 				"path": "./syntaxes/swupdate.tmLanguage.json"
 			}
-		],
-		"configuration": {
-			"type": "object",
-			"title": "%config.title%",
-			"properties": {
-				"SwupdateServer.trace.server": {
-					"scope": "window",
-					"type": "string",
-					"enum": [
-						"off",
-						"messages",
-						"verbose"
-					],
-					"default": "off",
-					"description": "%config.trace.description%"
-				}
-			}
-		}
+		]
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile && npm run extract-l10n && npm run bundle",
-		"clean": "rm -rf client/out server/out *.vsix client/tsconfig.tsbuildinfo server/tsconfig.tsbuildinfo",
-		"clean:full": "npm run clean && rm -rf node_modules client/node_modules server/node_modules package-lock.json client/package-lock.json server/package-lock.json",
+		"clean": "rm -rf client/out *.vsix client/tsconfig.tsbuildinfo",
+		"clean:full": "npm run clean && rm -rf node_modules client/node_modules package-lock.json client/package-lock.json",
 		"compile": "tsc -b",
 		"bundle": "node scripts/bundle.js",
 		"package:local": "npm run compile && npm run extract-l10n && npm run bundle && npx @vscode/vsce package --no-yarn --out swupdate-lang.vsix",
+		"package:dev": "npm run compile && npm run extract-l10n && npm run bundle && npx @vscode/vsce package $(node scripts/dev-version.js) --no-yarn --out swupdate-lang.vsix --no-git-tag-version --no-update-package-json",
 		"update:version": "node scripts/update-version.js",
-		"version": "node scripts/update-version.js && git add client/package.json server/package.json README.md",
+		"version": "node scripts/update-version.js && git add client/package.json README.md",
 		"watch": "tsc -b -w",
-		"postinstall": "cd client && npm install && cd ../server && npm install && cd ..",
+		"postinstall": "cd client && npm install && cd ..",
 		"test": "sh ./scripts/e2e.sh",
-		"install:local": "npm run package:local && node scripts/smart-reinstall.js",
+		"install:local": "npm run package:dev && node scripts/smart-reinstall.js",
 		"sbom": "npm run sbom:cyclonedx && npm run sbom:spdx",
 		"sbom:cyclonedx": "npx @cyclonedx/cdxgen -t javascript -o sbom.cdx.json",
 		"sbom:spdx": "npx @cyclonedx/cdxgen -t javascript -o sbom.spdx.json --format spdx",
-		"extract-l10n": "npx @vscode/l10n-dev export --outDir ./l10n './client/src/**/*.ts' './server/src/**/*.ts'"
+		"extract-l10n": "npx @vscode/l10n-dev export --outDir ./l10n './client/src/**/*.ts'"
 	},
 	"devDependencies": {
-		"@types/node": "^20.0.0",
+		"@types/node": "^26.0.0",
 		"@vscode/l10n-dev": "^0.0.35",
-		"@vscode/test-electron": "^2.5.2",
-		"@vscode/vsce": "^3.7.1",
-		"esbuild": "^0.25.0",
-		"ovsx": "^0.10.10",
-		"typescript": "^5.0.0"
+		"@vscode/test-electron": "^3.0.0",
+		"@vscode/vsce": "^3.9.2",
+		"esbuild": "^0.28.1",
+		"ovsx": "^1.0.1",
+		"typescript": "^6.0.3"
 	}
 }

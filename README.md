@@ -17,10 +17,6 @@ Install both extensions:
 
 Then open your `sw-description` file in VS Code. Suggestions and validation appear automatically as you type.
 
-## Settings
-
-- `swupdateServer.trace.server`: enable language server trace logs (`off`, `messages`, `verbose`)
-
 ## Notes
 
 - This extension is focused on SWUpdate authoring support.

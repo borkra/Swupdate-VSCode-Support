@@ -6,6 +6,14 @@
 import * as vscode from 'vscode';
 import * as assert from 'assert';
 import { getDocUri, activate } from './helper';
+import {
+	SW_DESCRIPTION_BOOLEAN_KEYWORD_VALUES,
+	SW_DESCRIPTION_COMPRESSED_VALUES,
+	SW_DESCRIPTION_DISKPART_LABELTYPE_VALUES,
+	SW_DESCRIPTION_ENCRYPTED_VALUES,
+	SW_DESCRIPTION_TYPE_VALUES_BY_SECTION,
+	SW_DESCRIPTION_UPDATE_TYPE_VALUES
+} from '../swDescription/definitions';
 
 type CompletionExpectation = Pick<vscode.CompletionItem, 'label' | 'kind'>;
 
@@ -14,6 +22,20 @@ type CompletionTestCase = {
 	position: vscode.Position;
 	expectedItems: CompletionExpectation[];
 };
+
+function asQuotedValueExpectations(values: readonly string[]): CompletionExpectation[] {
+	return values.map((value) => ({
+		label: `"${value}"`,
+		kind: vscode.CompletionItemKind.Value
+	}));
+}
+
+function asKeywordExpectations(values: readonly string[]): CompletionExpectation[] {
+	return values.map((value) => ({
+		label: value,
+		kind: vscode.CompletionItemKind.Keyword
+	}));
+}
 
 export async function runCompletionTest(): Promise<void> {
 	const docUri = getDocUri('sw-description.sample');
@@ -40,16 +62,15 @@ export async function runCompletionTest(): Promise<void> {
 				{ label: 'filesystem', kind: vscode.CompletionItemKind.Field },
 				{ label: 'mtdname', kind: vscode.CompletionItemKind.Field },
 				{ label: 'name', kind: vscode.CompletionItemKind.Field },
-				{ label: 'value', kind: vscode.CompletionItemKind.Field }
+				{ label: 'value', kind: vscode.CompletionItemKind.Field },
+				{ label: 'setting', kind: vscode.CompletionItemKind.Snippet },
+				{ label: '@include', kind: vscode.CompletionItemKind.Snippet }
 			]
 		},
 		{
 			docUri,
 			position: new vscode.Position(1, 15),
-			expectedItems: [
-				{ label: '"application"', kind: vscode.CompletionItemKind.Value },
-				{ label: '"OS"', kind: vscode.CompletionItemKind.Value }
-			]
+			expectedItems: asQuotedValueExpectations(SW_DESCRIPTION_UPDATE_TYPE_VALUES)
 		},
 		{
 			docUri,
@@ -61,64 +82,37 @@ export async function runCompletionTest(): Promise<void> {
 		{
 			docUri,
 			position: new vscode.Position(5, 10),
-			expectedItems: [
-				{ label: '"ubivol"', kind: vscode.CompletionItemKind.Value },
-				{ label: '"flash"', kind: vscode.CompletionItemKind.Value },
-				{ label: '"bootloader"', kind: vscode.CompletionItemKind.Value }
-			]
+			expectedItems: asQuotedValueExpectations(SW_DESCRIPTION_TYPE_VALUES_BY_SECTION.images)
 		},
 		{
 			docUri,
 			position: new vscode.Position(6, 16),
-			expectedItems: [
-				{ label: '"xz"', kind: vscode.CompletionItemKind.Value },
-				{ label: '"zstd"', kind: vscode.CompletionItemKind.Value },
-				{ label: '"zlib"', kind: vscode.CompletionItemKind.Value }
-			]
+			expectedItems: asQuotedValueExpectations(SW_DESCRIPTION_COMPRESSED_VALUES)
 		},
 		{
 			docUri,
 			position: new vscode.Position(7, 15),
 			expectedItems: [
-				{ label: '"aes-cbc"', kind: vscode.CompletionItemKind.Value },
-				{ label: 'true', kind: vscode.CompletionItemKind.Keyword }
+				...asQuotedValueExpectations(SW_DESCRIPTION_ENCRYPTED_VALUES),
+				...asKeywordExpectations(SW_DESCRIPTION_BOOLEAN_KEYWORD_VALUES)
 			]
 		},
 		{
 			docUri,
 			position: new vscode.Position(12, 10),
-			expectedItems: [
-				{ label: '"archive"', kind: vscode.CompletionItemKind.Value },
-				{ label: '"rawfile"', kind: vscode.CompletionItemKind.Value }
-			]
+			expectedItems: asQuotedValueExpectations(SW_DESCRIPTION_TYPE_VALUES_BY_SECTION.files)
 		},
 		{
 			docUri,
 			position: new vscode.Position(17, 10),
-			expectedItems: [
-				{ label: '"lua"', kind: vscode.CompletionItemKind.Value },
-				{ label: '"shellscript"', kind: vscode.CompletionItemKind.Value },
-				{ label: '"emmc_boot"', kind: vscode.CompletionItemKind.Value },
-				{ label: '"emmc_boot_toggle"', kind: vscode.CompletionItemKind.Value },
-				{ label: '"copy"', kind: vscode.CompletionItemKind.Value },
-				{ label: '"ssblswitch"', kind: vscode.CompletionItemKind.Value },
-				{ label: '"ubiswap"', kind: vscode.CompletionItemKind.Value },
-				{ label: '"docker_containerstart"', kind: vscode.CompletionItemKind.Value }
-			]
+			expectedItems: asQuotedValueExpectations(SW_DESCRIPTION_TYPE_VALUES_BY_SECTION.scripts)
 		},
 		{
 			docUri,
 			position: new vscode.Position(22, 10),
-			expectedItems: [
-				{ label: '"diskpart"', kind: vscode.CompletionItemKind.Value },
-				{ label: '"diskformat"', kind: vscode.CompletionItemKind.Value },
-				{ label: '"ubipartition"', kind: vscode.CompletionItemKind.Value },
-				{ label: '"toggleboot"', kind: vscode.CompletionItemKind.Value },
-				{ label: '"uniqueuuid"', kind: vscode.CompletionItemKind.Value },
-				{ label: '"btrfs"', kind: vscode.CompletionItemKind.Value }
-			]
+			expectedItems: asQuotedValueExpectations(SW_DESCRIPTION_TYPE_VALUES_BY_SECTION.partitions)
 		},
-		// Spec: filesystem value is open-ended (any Linux mount type) — general completions apply,
+		// Spec: filesystem value is open-ended (any Linux mount type) - general completions apply,
 		// not a restricted list. Verify the statement template appears as a field completion.
 		{
 			docUri: filesystemDocUri,
@@ -131,10 +125,7 @@ export async function runCompletionTest(): Promise<void> {
 		{
 			docUri: labeltypeDocUri,
 			position: new vscode.Position(5, 16),
-			expectedItems: [
-				{ label: '"gpt"', kind: vscode.CompletionItemKind.Value },
-				{ label: '"dos"', kind: vscode.CompletionItemKind.Value }
-			]
+			expectedItems: asQuotedValueExpectations(SW_DESCRIPTION_DISKPART_LABELTYPE_VALUES)
 		}
 	];
 

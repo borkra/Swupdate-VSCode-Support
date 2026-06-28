@@ -5,20 +5,20 @@
 - `npm run package:local`: compile, bundle, and package the extension as `swupdate-lang.vsix`.
 - `npm run install:local`: build, package, and force-install the current VSIX into `code` and `code-insiders`.
 
-> **Note:** The swupdate extension depends on `borkra.libconfig-lang`. Build and install that
+> **Note:** The swupdate extension depends on `borkra.libconfig-borkra`. Build and install that
 > extension first (see `../Libconfig-VsCode-Support`), then install this one.
 
 ## Testing
 
 The test runner installs the libconfig dependency from the path set in `LIBCONFIG_VSIX_PATH`,
-or falls back to the published marketplace extension `borkra.libconfig-lang`.
+or falls back to the published marketplace extension `borkra.libconfig-borkra`.
 
 ```bash
 # 1. Build the libconfig vsix (one-time or after libconfig changes):
 cd ../Libconfig-VsCode-Support && npm run package:local
 
 # 2. Run tests:
-LIBCONFIG_VSIX_PATH=../Libconfig-VsCode-Support/libconfig-lang.vsix npm test
+LIBCONFIG_VSIX_PATH=../Libconfig-VsCode-Support/libconfig-borkra.vsix npm test
 ```
 
 Use the VS Code **`test`** task to run tests without setting the variable manually

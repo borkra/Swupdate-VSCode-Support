@@ -37,7 +37,7 @@
 			"script": "test",
 			"options": {
 				"env": {
-					"LIBCONFIG_VSIX_PATH": "${workspaceFolder}/../Libconfig-VsCode-Support/libconfig-lang.vsix"
+					"LIBCONFIG_VSIX_PATH": "${workspaceFolder}/../Libconfig-VsCode-Support/libconfig-borkra.vsix"
 				}
 			},
 			"group": "test",

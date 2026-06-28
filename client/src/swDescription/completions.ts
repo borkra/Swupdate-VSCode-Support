@@ -2,71 +2,62 @@
 // SPDX-FileCopyrightText: 2026 borkra
 'use strict';
 
-import {
-	CompletionItem,
-	CompletionItemKind,
-	InsertTextFormat
-} from 'vscode-languageserver/node';
+import * as vscode from 'vscode';
 
 import {
+	SW_DESCRIPTION_BOOLEAN_KEYWORD_VALUES,
 	SW_DESCRIPTION_BOOLEAN_KEYS,
 	SW_DESCRIPTION_COLON_VALUE_KEYS,
 	SW_DESCRIPTION_COMPRESSED_VALUES,
 	SW_DESCRIPTION_DISKPART_LABELTYPE_VALUES,
 	SW_DESCRIPTION_ENCRYPTED_VALUES,
-	SW_DESCRIPTION_FILESYSTEM_VALUES,
 	SW_DESCRIPTION_GENERAL_LITERAL_VALUES,
 	SW_DESCRIPTION_STATEMENT_TEMPLATES,
 	SW_DESCRIPTION_STRTOBOOL_KEYS,
 	SW_DESCRIPTION_STRTOBOOL_VALUES,
 	SW_DESCRIPTION_TYPE_VALUES_BY_SECTION,
-	SW_DESCRIPTION_UPDATE_TYPE_VALUES
+	SW_DESCRIPTION_UPDATE_TYPE_VALUES,
+	isSwDescriptionTypeSection
 } from './definitions';
 import type { SwDescriptionTypeSection } from './definitions';
 
 // Pre-computed completion item arrays (computed once at module load).
-const SW_DESCRIPTION_STATEMENT_ITEMS: CompletionItem[] = SW_DESCRIPTION_STATEMENT_TEMPLATES.map(template => ({
-	label: template.label,
-	kind: template.kind === 'field' ? CompletionItemKind.Field : CompletionItemKind.Snippet,
-	insertText: template.insertText,
-	insertTextFormat: InsertTextFormat.Snippet,
-	detail: template.detail
-}));
+const SW_DESCRIPTION_STATEMENT_ITEMS: vscode.CompletionItem[] = SW_DESCRIPTION_STATEMENT_TEMPLATES.map(template =>
+	createSnippetCompletion(
+		template.label,
+		template.kind === 'field' ? vscode.CompletionItemKind.Field : vscode.CompletionItemKind.Snippet,
+		template.insertText,
+		template.detail
+	)
+);
 
-const SW_DESCRIPTION_GENERAL_VALUE_ITEMS: CompletionItem[] = [
+const SW_DESCRIPTION_GENERAL_VALUE_ITEMS: vscode.CompletionItem[] = [
 	...createLiteralValueCompletions(SW_DESCRIPTION_GENERAL_LITERAL_VALUES),
-	{
-		label: '"#RE:^...$"',
-		kind: CompletionItemKind.Snippet,
-		insertText: '"#RE:${1:^1\\.[023]$}"',
-		insertTextFormat: InsertTextFormat.Snippet,
-		detail: 'POSIX regular expression hardware compatibility pattern'
-	}
+	createSnippetCompletion(
+		'"#RE:^...$"',
+		vscode.CompletionItemKind.Snippet,
+		'"#RE:${1:^1\\.[023]$}"',
+		'POSIX regular expression hardware compatibility pattern'
+	)
 ];
+
+// Native libconfig boolean keys (e.g. reboot, install-if-different) take true/false keywords.
+const SW_DESCRIPTION_BOOLEAN_ITEMS: vscode.CompletionItem[] = createKeywordValueCompletions(SW_DESCRIPTION_BOOLEAN_KEYWORD_VALUES);
 
 const SW_DESCRIPTION_COMPRESSED_ITEMS = createLiteralValueCompletions(SW_DESCRIPTION_COMPRESSED_VALUES);
 
-const SW_DESCRIPTION_ENCRYPTED_ITEMS: CompletionItem[] = [
+const SW_DESCRIPTION_ENCRYPTED_ITEMS: vscode.CompletionItem[] = [
 	...createLiteralValueCompletions(SW_DESCRIPTION_ENCRYPTED_VALUES),
-	{ label: 'true', kind: CompletionItemKind.Keyword, insertText: 'true' },
-	{ label: 'false', kind: CompletionItemKind.Keyword, insertText: 'false' }
+	...SW_DESCRIPTION_BOOLEAN_ITEMS
 ];
 
 const SW_DESCRIPTION_DISKPART_LABELTYPE_ITEMS = createLiteralValueCompletions(SW_DESCRIPTION_DISKPART_LABELTYPE_VALUES);
-
-const SW_DESCRIPTION_FILESYSTEM_ITEMS = createLiteralValueCompletions(SW_DESCRIPTION_FILESYSTEM_VALUES);
 
 const SW_DESCRIPTION_UPDATE_TYPE_ITEMS = createLiteralValueCompletions(SW_DESCRIPTION_UPDATE_TYPE_VALUES);
 
 const SW_DESCRIPTION_STRTOBOOL_ITEMS = createLiteralValueCompletions(SW_DESCRIPTION_STRTOBOOL_VALUES);
 
-// Native libconfig boolean keys (e.g. reboot, install-if-different) take true/false keywords.
-const SW_DESCRIPTION_BOOLEAN_ITEMS: CompletionItem[] = [
-	{ label: 'true', kind: CompletionItemKind.Keyword, insertText: 'true' },
-	{ label: 'false', kind: CompletionItemKind.Keyword, insertText: 'false' }
-];
-
-const SW_DESCRIPTION_TYPE_ITEMS_BY_SECTION: Readonly<Record<SwDescriptionTypeSection, CompletionItem[]>> = {
+const SW_DESCRIPTION_TYPE_ITEMS_BY_SECTION: Readonly<Record<SwDescriptionTypeSection, vscode.CompletionItem[]>> = {
 	images: createLiteralValueCompletions(SW_DESCRIPTION_TYPE_VALUES_BY_SECTION.images),
 	files: createLiteralValueCompletions(SW_DESCRIPTION_TYPE_VALUES_BY_SECTION.files),
 	partitions: createLiteralValueCompletions(SW_DESCRIPTION_TYPE_VALUES_BY_SECTION.partitions),
@@ -74,18 +65,18 @@ const SW_DESCRIPTION_TYPE_ITEMS_BY_SECTION: Readonly<Record<SwDescriptionTypeSec
 };
 
 export type SwDescriptionCompletionBase = {
-	includeCompletion: CompletionItem;
+	includeCompletion: vscode.CompletionItem;
 };
 
-type ValueCompletionProvider = (textBeforeLine: string) => CompletionItem[];
+type ValueCompletionProvider = (textBeforeLine: string) => vscode.CompletionItem[];
 
 const ASSIGNMENT_KEY_REGEX = /([A-Za-z0-9_-]+)\s*[:=][^:=]*$/;
 const TRAILING_STATEMENT_SEPARATOR_REGEX = /[;{}]\s*$/;
 const SECTION_HEADER_REGEX = /^\s*([A-Za-z0-9_-]+)\s*:\s*\(\s*$/;
 
-const SW_DESCRIPTION_COLON_VALUE_KEY_SET = new Set<string>(SW_DESCRIPTION_COLON_VALUE_KEYS as readonly string[]);
+const SW_DESCRIPTION_COLON_VALUE_KEY_SET = new Set<string>(SW_DESCRIPTION_COLON_VALUE_KEYS);
 
-const SW_DESCRIPTION_ALL_ITEMS: CompletionItem[] = [
+const SW_DESCRIPTION_ALL_ITEMS: vscode.CompletionItem[] = [
 	...SW_DESCRIPTION_GENERAL_VALUE_ITEMS,
 	...SW_DESCRIPTION_STATEMENT_ITEMS
 ];
@@ -94,18 +85,14 @@ const SW_DESCRIPTION_ALL_ITEMS: CompletionItem[] = [
 const valueCompletionsByAssignmentKey: Readonly<Record<string, ValueCompletionProvider>> = {
 	compressed: () => SW_DESCRIPTION_COMPRESSED_ITEMS,
 	encrypted: () => SW_DESCRIPTION_ENCRYPTED_ITEMS,
-	// Note: 'filesystem' is intentionally absent — it accepts any Linux mount type.
+	// Note: 'filesystem' is intentionally absent - it accepts any Linux mount type.
 	labeltype: provideLabeltypeValueCompletions,
 	'update-type': () => SW_DESCRIPTION_UPDATE_TYPE_ITEMS,
 	type: provideTypeValueCompletions,
 	// Native libconfig boolean keys take true/false keywords.
-	...Object.fromEntries(
-		SW_DESCRIPTION_BOOLEAN_KEYS.map(key => [key, () => SW_DESCRIPTION_BOOLEAN_ITEMS])
-	),
-	// Handler properties-block keys parsed via strtobool() — must use "true"/"TRUE"/"false"/"FALSE"
-	...Object.fromEntries(
-		SW_DESCRIPTION_STRTOBOOL_KEYS.map(key => [key, () => SW_DESCRIPTION_STRTOBOOL_ITEMS])
-	)
+	...createValueCompletionProviders(SW_DESCRIPTION_BOOLEAN_KEYS, () => SW_DESCRIPTION_BOOLEAN_ITEMS),
+	// Handler properties-block keys parsed via strtobool() - must use "true"/"TRUE"/"false"/"FALSE"
+	...createValueCompletionProviders(SW_DESCRIPTION_STRTOBOOL_KEYS, () => SW_DESCRIPTION_STRTOBOOL_ITEMS)
 };
 
 export function getSwDescriptionCompletionItems(
@@ -114,7 +101,7 @@ export function getSwDescriptionCompletionItems(
 	lineStart: number,
 	trimmedPrefix: string,
 	base: SwDescriptionCompletionBase
-): CompletionItem[] {
+): vscode.CompletionItem[] {
 	if (trimmedPrefix.startsWith('@')) {
 		return [base.includeCompletion];
 	}
@@ -139,7 +126,7 @@ export function getSwDescriptionCompletionItems(
 function getSwDescriptionValueCompletionsForContext(
 	textBeforeLine: string,
 	linePrefix: string
-): CompletionItem[] {
+): vscode.CompletionItem[] {
 	const assignmentKey = getCurrentAssignmentKey(linePrefix);
 	if (!assignmentKey) {
 		return SW_DESCRIPTION_GENERAL_VALUE_ITEMS;
@@ -153,7 +140,7 @@ function getSwDescriptionValueCompletionsForContext(
 	return SW_DESCRIPTION_GENERAL_VALUE_ITEMS;
 }
 
-function provideLabeltypeValueCompletions(textBeforeLine: string): CompletionItem[] {
+function provideLabeltypeValueCompletions(textBeforeLine: string): vscode.CompletionItem[] {
 	const parentSection = getCurrentSwDescriptionSection(textBeforeLine);
 	if (parentSection !== 'partitions') {
 		return SW_DESCRIPTION_GENERAL_VALUE_ITEMS;
@@ -161,7 +148,7 @@ function provideLabeltypeValueCompletions(textBeforeLine: string): CompletionIte
 	return SW_DESCRIPTION_DISKPART_LABELTYPE_ITEMS;
 }
 
-function provideTypeValueCompletions(textBeforeLine: string): CompletionItem[] {
+function provideTypeValueCompletions(textBeforeLine: string): vscode.CompletionItem[] {
 	const parentSection = getCurrentSwDescriptionSection(textBeforeLine);
 	if (!isSwDescriptionTypeSection(parentSection)) {
 		return SW_DESCRIPTION_GENERAL_VALUE_ITEMS;
@@ -194,14 +181,32 @@ function getCurrentSwDescriptionSection(textBeforeLine: string): string | null {
 	return null;
 }
 
-function isSwDescriptionTypeSection(section: string | null): section is SwDescriptionTypeSection {
-	return section !== null && Object.prototype.hasOwnProperty.call(SW_DESCRIPTION_TYPE_VALUES_BY_SECTION, section);
+function createLiteralValueCompletions(values: readonly string[]): vscode.CompletionItem[] {
+	return values.map(value => createTextCompletion(`"${value}"`, vscode.CompletionItemKind.Value, `"${value}"`));
 }
 
-function createLiteralValueCompletions(values: readonly string[]): CompletionItem[] {
-	return values.map(value => ({
-		label: `"${value}"`,
-		kind: CompletionItemKind.Value,
-		insertText: `"${value}"`
-	}));
+function createKeywordValueCompletions(values: readonly string[]): vscode.CompletionItem[] {
+	return values.map(value => createTextCompletion(value, vscode.CompletionItemKind.Keyword, value));
+}
+
+function createValueCompletionProviders(keys: readonly string[], provider: ValueCompletionProvider): Record<string, ValueCompletionProvider> {
+	const providers: Record<string, ValueCompletionProvider> = {};
+	for (const key of keys) {
+		providers[key] = provider;
+	}
+	return providers;
+}
+
+function createTextCompletion(label: string, kind: vscode.CompletionItemKind, insertText: string, detail?: string): vscode.CompletionItem {
+	const item = new vscode.CompletionItem(label, kind);
+	item.insertText = insertText;
+	item.detail = detail;
+	return item;
+}
+
+function createSnippetCompletion(label: string, kind: vscode.CompletionItemKind, insertText: string, detail?: string): vscode.CompletionItem {
+	const item = new vscode.CompletionItem(label, kind);
+	item.insertText = new vscode.SnippetString(insertText);
+	item.detail = detail;
+	return item;
 }
