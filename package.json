@@ -20,9 +20,6 @@
 	"engines": {
 		"vscode": "^1.82.0"
 	},
-	"activationEvents": [
-		"onStartupFinished"
-	],
 	"extensionDependencies": [
 		"borkra.libconfig-borkra"
 	],
@@ -76,12 +73,12 @@
 		"extract-l10n": "npx @vscode/l10n-dev export --outDir ./l10n './client/src/**/*.ts'"
 	},
 	"devDependencies": {
-		"@types/node": "^26.0.0",
+		"@types/node": "^26.0.1",
 		"@vscode/l10n-dev": "^0.0.35",
 		"@vscode/test-electron": "^3.0.0",
 		"@vscode/vsce": "^3.9.2",
 		"esbuild": "^0.28.1",
-		"ovsx": "^1.0.1",
+		"ovsx": "^1.0.2",
 		"typescript": "^6.0.3"
 	}
 }

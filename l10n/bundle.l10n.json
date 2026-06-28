@@ -16,10 +16,10 @@
   "Unsupported type for '{0}'. Expected one of: {1}.": "Unsupported type for '{0}'. Expected one of: {1}.",
   "'{0}' must be one of: {1}.": "'{0}' must be one of: {1}.",
   "'{0}' must be a decimal number, external variable (@@var@@), or function call.": "'{0}' must be a decimal number, external variable (@@var@@), or function call.",
-  "Property 'type' must be one of: {0}.": "Property 'type' must be one of: {0}.",
   "'{0}' must be a decimal number with optional K, M, or G suffix, external variable (@@var@@), or function call.": "'{0}' must be a decimal number with optional K, M, or G suffix, external variable (@@var@@), or function call.",
-  "Property 'zckloglevel' must be one of: {0}.": "Property 'zckloglevel' must be one of: {0}.",
   "'{0}' should not be empty.": "'{0}' should not be empty.",
+  "Property 'type' must be one of: {0}.": "Property 'type' must be one of: {0}.",
+  "Property 'zckloglevel' must be one of: {0}.": "Property 'zckloglevel' must be one of: {0}.",
   "Unsupported labeltype. Expected one of: {0}.": "Unsupported labeltype. Expected one of: {0}.",
   "Expected boolean value for '{0}'.": "Expected boolean value for '{0}'.",
   "Unknown property '{0}'. Check for typos.": "Unknown property '{0}'. Check for typos.",
@@ -30,5 +30,5 @@
   "Invalid 'flag' value '{0}'. Only 'boot' is supported.": "Invalid 'flag' value '{0}'. Only 'boot' is supported.",
   "GPT partition 'type' must be a GUID (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx). Got '{0}'.": "GPT partition 'type' must be a GUID (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx). Got '{0}'.",
   "DOS partition 'type' must be a hex byte code (e.g. '83'). Got '{0}'.": "DOS partition 'type' must be a hex byte code (e.g. '83'). Got '{0}'.",
-  "Invalid partition 'type' value '{0}'. Expected a GPT type GUID (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) or a DOS hex byte (e.g. 83).": "Invalid partition 'type' value '{0}'. Expected a GPT type GUID (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx) or a DOS hex byte (e.g. 83)."
+  "Partition entry 'type' requires 'labeltype' to be set to 'gpt' or 'dos'.": "Partition entry 'type' requires 'labeltype' to be set to 'gpt' or 'dos'."
 }

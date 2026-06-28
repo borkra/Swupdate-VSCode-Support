@@ -5,7 +5,6 @@
 
 import * as vscode from 'vscode';
 import type { ExtensionContext } from 'vscode';
-import * as l10n from '@vscode/l10n';
 
 import {
 	type LibconfigCompletionEntry,
@@ -32,9 +31,6 @@ const severityMap = new Map<number, vscode.DiagnosticSeverity>([
 ]);
 
 export function activate(context: ExtensionContext): void {
-	if (vscode.l10n.uri) {
-		l10n.config({ uri: vscode.l10n.uri.toString() });
-	}
 	outputChannel = vscode.window.createOutputChannel('SWUpdate');
 	context.subscriptions.push(outputChannel);
 	const libconfigApiPromise = resolveLibconfigApi(context);
@@ -82,15 +78,19 @@ function registerLibconfigBridge(
 ): void {
 	const syntaxDiagnostics = vscode.languages.createDiagnosticCollection('swupdate-libconfig');
 	const semanticDiagnostics = vscode.languages.createDiagnosticCollection('swupdate');
-	const syncedVersions = new Map<string, number>();
-	const requestedVersions = new Map<string, number>();
-	const pendingSyncs = new Map<string, NodeJS.Timeout>();
+
+	interface DocumentSyncState {
+		lastSyncedVersion: number;
+		pendingTimeout?: NodeJS.Timeout;
+	}
+
+	const documentStates = new Map<string, DocumentSyncState>();
 	const SYNC_DEBOUNCE_MS = 150;
 	context.subscriptions.push(syntaxDiagnostics, semanticDiagnostics);
 
 	// Server lifecycle: acquire a handle while any sw-description file is open.
 	let swDocCount = vscode.workspace.textDocuments.filter(d => isSupportedDocument(d)).length;
-	let libconfigHandle: { dispose(): void } | undefined;
+	let libconfigHandle: vscode.Disposable | undefined;
 
 	const tryAcquireHandle = (): void => {
 		if (libconfigHandle) { return; }
@@ -108,18 +108,16 @@ function registerLibconfigBridge(
 
 	if (swDocCount > 0) { tryAcquireHandle(); }
 
-	const clearDocumentState = (documentUri: string, document?: vscode.Uri): void => {
-		if (document) {
-			syntaxDiagnostics.delete(document);
-			semanticDiagnostics.delete(document);
+	const clearDocumentState = (documentUri: string, docUri?: vscode.Uri): void => {
+		if (docUri) {
+			syntaxDiagnostics.delete(docUri);
+			semanticDiagnostics.delete(docUri);
 		}
-		syncedVersions.delete(documentUri);
-		requestedVersions.delete(documentUri);
-		const pending = pendingSyncs.get(documentUri);
-		if (pending) {
-			clearTimeout(pending);
-			pendingSyncs.delete(documentUri);
+		const state = documentStates.get(documentUri);
+		if (state?.pendingTimeout) {
+			clearTimeout(state.pendingTimeout);
 		}
+		documentStates.delete(documentUri);
 	};
 
 	const syncDocumentImmediate = async (document: vscode.TextDocument): Promise<void> => {
@@ -130,16 +128,12 @@ function registerLibconfigBridge(
 			return;
 		}
 
-		const requestedVersion = document.version;
-		const lastSyncedVersion = syncedVersions.get(documentUri);
-		if (lastSyncedVersion === requestedVersion) {
+		const currentVersion = document.version;
+		const state = documentStates.get(documentUri) ?? { lastSyncedVersion: -1 };
+
+		if (state.lastSyncedVersion === currentVersion) {
 			return;
 		}
-		// Already in-flight for this exact version - skip to avoid duplicate work
-		if (requestedVersions.get(documentUri) === requestedVersion) {
-			return;
-		}
-		requestedVersions.set(documentUri, requestedVersion);
 
 		const api = await libconfigApiPromise;
 		if (!api) {
@@ -148,38 +142,41 @@ function registerLibconfigBridge(
 
 		try {
 			const parsedDocument = await api.getParsedDocument(documentUri, document.getText());
-			// Check if a newer version was requested while we were parsing
-			if (requestedVersions.get(documentUri) !== requestedVersion) {
+			// Discard if a newer version arrived while parsing
+			if (documentStates.get(documentUri)?.lastSyncedVersion !== state.lastSyncedVersion) {
 				return;
 			}
 			syntaxDiagnostics.set(document.uri, syntaxDiagnosticsToVsCode(parsedDocument.syntaxErrors));
 			semanticDiagnostics.set(document.uri, semanticDiagnosticsToVsCode(getSwDescriptionSemanticDiagnostics(document.positionAt.bind(document), parsedDocument.rootSettings)));
-			syncedVersions.set(documentUri, requestedVersion);
+			state.lastSyncedVersion = currentVersion;
+			state.pendingTimeout = undefined;
+			documentStates.set(documentUri, state);
 		} catch (error) {
 			logError(`Failed to parse/sync ${documentUri}`, error);
 		}
 	};
 
-	// Debounced version for change events to reduce API calls during rapid typing
-	const syncDocument = (document: vscode.TextDocument, immediate: boolean = false): void => {
+	const scheduleSync = (document: vscode.TextDocument, immediate: boolean = false): void => {
 		const documentUri = document.uri.toString();
+		const state = documentStates.get(documentUri) ?? { lastSyncedVersion: -1 };
 
-		// Clear any pending sync
-		const pending = pendingSyncs.get(documentUri);
-		if (pending) {
-			clearTimeout(pending);
+		// Cancel pending timeout for this document
+		if (state.pendingTimeout) {
+			clearTimeout(state.pendingTimeout);
 		}
 
 		if (immediate) {
-			pendingSyncs.delete(documentUri);
+			state.pendingTimeout = undefined;
+			documentStates.set(documentUri, state);
 			void syncDocumentImmediate(document);
 		} else {
-			// Debounce for change events
-			const timeout = setTimeout(() => {
-				pendingSyncs.delete(documentUri);
+			// Debounce for change events to batch rapid typing
+			state.pendingTimeout = setTimeout(() => {
+				state.pendingTimeout = undefined;
+				documentStates.set(documentUri, state);
 				void syncDocumentImmediate(document);
 			}, SYNC_DEBOUNCE_MS);
-			pendingSyncs.set(documentUri, timeout);
+			documentStates.set(documentUri, state);
 		}
 	};
 
@@ -188,15 +185,15 @@ function registerLibconfigBridge(
 			swDocCount++;
 			if (swDocCount === 1) { tryAcquireHandle(); }
 		}
-		syncDocument(document, true);
+		scheduleSync(document, true);
 	}));
 
 	context.subscriptions.push(vscode.workspace.onDidChangeTextDocument((event) => {
-		syncDocument(event.document, false); // Debounced
+		scheduleSync(event.document, false);
 	}));
 
 	context.subscriptions.push(vscode.workspace.onDidSaveTextDocument((document) => {
-		syncDocument(document, true); // Immediate on save
+		scheduleSync(document, true);
 	}));
 
 	context.subscriptions.push(vscode.workspace.onDidCloseTextDocument((document) => {
@@ -207,28 +204,25 @@ function registerLibconfigBridge(
 		clearDocumentState(document.uri.toString(), document.uri);
 	}));
 
-	// Trigger sync when visible text editor changes to catch language mode switches
 	context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor((editor) => {
 		if (editor) {
-			syncDocument(editor.document, true);
+			scheduleSync(editor.document, true);
 		}
 	}));
 
 	for (const document of vscode.workspace.textDocuments) {
-		syncDocument(document, true);
+		scheduleSync(document, true);
 	}
 
-	// Cleanup function for pending syncs
 	context.subscriptions.push({
 		dispose: () => {
 			releaseHandle();
-			// Clear all pending timeouts on deactivation
-			for (const timeout of pendingSyncs.values()) {
-				clearTimeout(timeout);
+			for (const state of documentStates.values()) {
+				if (state.pendingTimeout) {
+					clearTimeout(state.pendingTimeout);
+				}
 			}
-			pendingSyncs.clear();
-			syncedVersions.clear();
-			requestedVersions.clear();
+			documentStates.clear();
 		}
 	});
 }
