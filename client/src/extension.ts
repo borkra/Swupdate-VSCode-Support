@@ -240,7 +240,15 @@ async function resolveLibconfigApi(context: ExtensionContext): Promise<Libconfig
 		return undefined;
 	}
 
-	const api = await extension.activate();
+	let api: LibconfigExtensionApi | undefined;
+	try {
+		api = await extension.activate();
+	} catch (error) {
+		logError(`Failed to activate LibConfig extension ${libconfigId}`, error);
+		void vscode.window.showErrorMessage(`Failed to activate LibConfig extension ${libconfigId}.`);
+		return undefined;
+	}
+
 	if (
 		!api ||
 		(api.apiVersion !== 1 && api.apiVersion !== 2) ||
