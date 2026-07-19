@@ -23,6 +23,7 @@ import {
 	SW_DESCRIPTION_ENTRY_KNOWN_KEYS,
 	SW_DESCRIPTION_EXTERNAL_VARIABLE_REGEX,
 	SW_DESCRIPTION_FUNCTION_REGEX,
+	SW_DESCRIPTION_KNOWN_HELPER_FUNCTION_REGEX,
 	SW_DESCRIPTION_FILESYSTEM_VALUES,
 	SW_DESCRIPTION_HEX_64_REGEX,
 	SW_DESCRIPTION_IVT_REGEX,
@@ -417,7 +418,9 @@ function readArrayChildren(node: ArrayLibConfigNode): BaseLibConfigNode[] {
 }
 
 function isExternalOrFunctionRef(value: string): boolean {
-	return SW_DESCRIPTION_EXTERNAL_VARIABLE_REGEX.test(value) || SW_DESCRIPTION_FUNCTION_REGEX.test(value);
+	return SW_DESCRIPTION_EXTERNAL_VARIABLE_REGEX.test(value) ||
+		SW_DESCRIPTION_KNOWN_HELPER_FUNCTION_REGEX.test(value) ||
+		SW_DESCRIPTION_FUNCTION_REGEX.test(value);
 }
 
 function parseDiskpartPartitionEntry(entry: string): { key: string; value: string } | null {

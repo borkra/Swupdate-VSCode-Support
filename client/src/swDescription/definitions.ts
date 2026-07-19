@@ -580,6 +580,8 @@ export const SW_DESCRIPTION_ENTRY_KNOWN_KEYS = new Set<string>([
 export const SW_DESCRIPTION_HEX_64_REGEX = /^[0-9a-fA-F]{64}$/;
 // Generic function call pattern: $function_name(...)
 export const SW_DESCRIPTION_FUNCTION_REGEX = /^\$[a-zA-Z_][a-zA-Z0-9_]*\([^\)]*\)$/;
+// Known SWUpdate helper functions accepted in string-value contexts.
+export const SW_DESCRIPTION_KNOWN_HELPER_FUNCTION_REGEX = /^\$(swupdate_get_sha256|swupdate_get_size)\([^\)]+\)$/;
 // Size/offset with optional K, M, G suffixes (for top-level use)
 export const SW_DESCRIPTION_SIZE_REGEX = /^\d+(K|M|G)?$/;
 export const SW_DESCRIPTION_OFFSET_REGEX = SW_DESCRIPTION_SIZE_REGEX;
