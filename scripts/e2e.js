@@ -48,7 +48,8 @@ async function main() {
         '--extensions-dir',
         extensionsDir,
         '--user-data-dir',
-        userDataDir
+        userDataDir,
+        '--disable-crash-reporter'
       ]
     });
   } catch (err) {

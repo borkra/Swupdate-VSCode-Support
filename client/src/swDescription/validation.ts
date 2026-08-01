@@ -170,7 +170,11 @@ const entryValidators = new Map<string, Validator>([
 	['size', sizeOffsetEntryValidator],
 	['type', (ctx) => {
 		if (!ctx.section) { return; }
-		const sv = readStringValue(ctx.value)!;
+		const sv = readStringValue(ctx.value);
+		if (sv === null) {
+			ctx.addWarning(ctx.property, l10n.t("Expected string value for '{0}'.", ctx.property.name));
+			return;
+		}
 		if (!SW_DESCRIPTION_TYPE_VALUE_SETS_BY_SECTION[ctx.section].has(sv)) {
 			ctx.addWarning(ctx.property, l10n.t("Unsupported type for '{0}'. Expected one of: {1}.", ctx.section, TYPE_VALUES_MSG[ctx.section]));
 		}

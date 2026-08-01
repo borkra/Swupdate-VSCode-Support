@@ -24,13 +24,13 @@ export async function runDiagnosticsTest(): Promise<void> {
       fileName: 'sw-description-invalid.txt',
       expectations: [
         { message: "Invalid partition 'size' value", severity: vscode.DiagnosticSeverity.Error },
-        { message: "'size' should be a number or a decimal string with optional K, M, or G suffix", severity: vscode.DiagnosticSeverity.Error },
+        { message: "'size' must be a number or a decimal string with optional K, M, or G suffix", severity: vscode.DiagnosticSeverity.Error },
         { message: "Expected string value for 'update-type'", severity: vscode.DiagnosticSeverity.Warning },
         { message: "Unsupported type for 'partitions'", severity: vscode.DiagnosticSeverity.Warning },
         { message: "Unsupported type for 'images'", severity: vscode.DiagnosticSeverity.Warning },
         { message: 'Unsupported compression', severity: vscode.DiagnosticSeverity.Warning },
         { message: "Expected string or boolean value for 'encrypted'", severity: vscode.DiagnosticSeverity.Warning },
-        { message: "'offset' should be a decimal string with optional K, M, or G suffix", severity: vscode.DiagnosticSeverity.Warning },
+        { message: "'offset' must be a number or a decimal string with optional K, M, or G suffix", severity: vscode.DiagnosticSeverity.Error },
         { message: 'Unsupported fstype', severity: vscode.DiagnosticSeverity.Warning },
         { message: "'aes-key' should be a 32/48/64-character hexadecimal string or a function call", severity: vscode.DiagnosticSeverity.Warning },
         { message: "'ivt' should be a 32-character hexadecimal string or a function call", severity: vscode.DiagnosticSeverity.Warning },
@@ -72,7 +72,9 @@ export async function runDiagnosticsTest(): Promise<void> {
         }
       ]
     },
-    // Spec: comprehensive valid sw-description must not generate false-positive warnings
+    // Spec: comprehensive valid sw-description must not generate false-positive warnings.
+    // Also covers concatenated string literals (sha256 is split across two adjacent
+    // quoted strings) parsing and validating as a single merged value.
     {
       fileName: 'sw-description-spec-full.sample',
       expectations: [
@@ -137,13 +139,13 @@ export async function runDiagnosticsTest(): Promise<void> {
         // ref assigned a boolean (not a string)
         { message: "Expected string value for 'ref'", severity: vscode.DiagnosticSeverity.Warning },
         // size assigned a boolean (not string/number)
-        { message: "Invalid partition 'size' value. Expected number or string.", severity: vscode.DiagnosticSeverity.Error },
+        { message: "'size' must be a number or string.", severity: vscode.DiagnosticSeverity.Error },
         // labeltype assigned a number (not a string)
-        { message: "Expected string value for 'labeltype'", severity: vscode.DiagnosticSeverity.Error },
+        { message: "Expected string value for 'labeltype'", severity: vscode.DiagnosticSeverity.Warning },
         // native libconfig boolean inside properties block - must use strtobool string
-        { message: "Use a strtobool string for 'atomic-install'", severity: vscode.DiagnosticSeverity.Warning },
+        { message: "Expected string value for 'atomic-install'", severity: vscode.DiagnosticSeverity.Warning },
         // boolean-ish string with wrong case inside properties block
-        { message: "'force' is not a valid strtobool string", severity: vscode.DiagnosticSeverity.Warning },
+        { message: "'force' must be one of:", severity: vscode.DiagnosticSeverity.Warning },
         // diskpart partition-N assigned a string instead of an array
         { message: "Expected array value for 'partition-1'", severity: vscode.DiagnosticSeverity.Warning }
       ]
